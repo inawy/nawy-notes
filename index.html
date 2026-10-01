@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0ea5e9" />
+    <meta name="description" content="ناوي نوت — ملاحظات بسيطة وسريعة تعمل بدون إنترنت" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="./favicon.ico" sizes="48x48" />
+    <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <title>ناوي نوت</title>
+    <script>
+      // يمنع وميض الوضع الفاتح قبل تحميل الـ CSS
+      try {
+        var t = localStorage.getItem('nawy-note:theme');
+        if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches))
+          document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
+  </head>
+  <body class="min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
+    <script>
+      // شريط أخطاء مرئي: يعمل حتى لو فشل تحميل شيفرة التطبيق نفسها
+      (function () {
+        var seen = {};
+        function box() {
+          var b = document.getElementById('fatal');
+          if (b) return b;
+          b = document.createElement('div');
+          b.id = 'fatal';
+          b.setAttribute('role', 'alert');
+          b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:100;background:#b91c1c;color:#fff;padding:12px 16px;font:14px/1.7 Tahoma,system-ui,sans-serif;max-height:50vh;overflow:auto;direction:rtl';
+          b.innerHTML = '<strong>تعذّر تشغيل التطبيق بشكل سليم</strong><div id="fatalList"></div>';
+          var x = document.createElement('button');
+          x.textContent = 'إغلاق';
+          x.style.cssText = 'margin-top:6px;background:#fff;color:#b91c1c;border:0;border-radius:8px;padding:4px 12px;cursor:pointer';
+          x.onclick = function () { b.remove(); };
+          b.appendChild(x);
+          document.body.appendChild(b);
+          return b;
+        }
+        function report(msg, tag) {
+          msg = String(msg);
+          if (seen[msg]) return;
+          seen[msg] = 1;
+          var p = document.createElement('p');
+          p.style.margin = '4px 0';
+          p.textContent = msg;
+          if (tag) p.setAttribute('data-tag', tag);
+          box().querySelector('#fatalList').appendChild(p);
+        }
+        window.__nawyReport = report;
+        window.__nawyDone = function () {
+          window.__nawyReady = true;
+          var b = document.getElementById('fatal');
+          if (!b) return;
+          b.querySelectorAll('[data-tag=watchdog]').forEach(function (p) { p.remove(); });
+          if (!b.querySelector('#fatalList').children.length) b.remove();
+        };
+        window.addEventListener('error', function (e) {
+          var t = e.target;
+          if (t && t !== window && t.tagName === 'SCRIPT') return report('فشل تحميل مكتبة: ' + (t.src || ''));
+          if (t && t !== window) return;
+          var m = e.message || (e.error && e.error.message) || '';
+          if (/ResizeObserver/.test(m)) return; // تنبيه غير ضار
+          report('خطأ: ' + m);
+        }, true);
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e.reason;
+          report('خطأ غير معالج: ' + ((r && ((r.name ? r.name + ' — ' : '') + (r.message || ''))) || r));
+        });
+        setTimeout(function () {
+          if (!window.__nawyReady) report('لم يبدأ التطبيق بعد. غالباً تعذّر تحميل المكتبات (Tailwind / Dexie / Sortable) من الإنترنت — تأكد من الاتصال ثم أعد تحميل الصفحة.', 'watchdog');
+        }, 6000);
+      })();
+    </script>
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
+      <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+        <div class="flex shrink-0 items-center gap-2">
+          <img src="./logo.png" alt="" width="36" height="36" class="h-9 w-9 rounded-xl shadow-sm" />
+          <span class="hidden text-lg font-semibold tracking-tight sm:block">ناوي نوت</span>
+        </div>
+        <div id="searchBox" class="relative mx-auto flex max-w-xl flex-1 items-center rounded-xl bg-slate-100 transition focus-within:ring-2 focus-within:ring-sky-400 dark:bg-slate-800">
+          <span id="searchIcon" class="pointer-events-none ps-3 text-slate-400"></span>
+          <input id="search" type="search" autocomplete="off" placeholder="ابحث في ملاحظاتك..."
+            class="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-slate-400" />
+          <button id="btnSort" type="button" class="btn-icon !p-2" aria-haspopup="menu" aria-expanded="false"></button>
+          <button id="btnLayout" type="button" class="btn-icon !p-2 me-1"></button>
+          <div id="sortMenu" role="menu" class="modal-enter absolute end-0 top-full z-40 mt-2 hidden w-60 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"></div>
+        </div>
+        <div class="flex shrink-0 items-center gap-1">
+          <button id="btnBackup" class="btn-icon" title="نسخ احتياطي"></button>
+          <button id="btnTheme" class="btn-icon" title="الوضع الليلي"></button>
+        </div>
+      </div>
+      <nav id="tabs" class="mx-auto flex max-w-6xl gap-1 px-4 pb-2 text-sm"></nav>
+    </header>
+
+    <main class="mx-auto max-w-6xl px-4 py-6 pb-28">
+      <div id="trashBar" class="mx-auto mb-6 hidden max-w-xl items-center justify-between rounded-xl bg-slate-100 px-4 py-2.5 text-sm text-slate-500 dark:bg-slate-800">
+        <span>تُحذف الملاحظات نهائياً بعد 30 يوماً.</span>
+        <button id="btnEmptyTrash" class="font-medium text-red-500 hover:underline">إفراغ المهملات</button>
+      </div>
+
+      <section id="pinnedSection" class="mb-6 hidden">
+        <h3 class="mb-3 px-1 text-xs font-semibold tracking-wider text-slate-400">مثبتة</h3>
+        <div id="pinnedGrid" class="notes-grid"></div>
+      </section>
+      <section>
+        <h3 id="othersTitle" class="mb-3 hidden px-1 text-xs font-semibold tracking-wider text-slate-400">أخرى</h3>
+        <div id="grid" class="notes-grid"></div>
+      </section>
+
+      <div id="empty" class="hidden flex-col items-center py-20 text-center text-slate-400">
+        <div id="emptyIcon" class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"></div>
+        <p id="emptyText" class="text-base text-slate-500 dark:text-slate-400"></p>
+      </div>
+    </main>
+
+    <!-- زر الإضافة العائم -->
+    <div id="fabRoot" class="fixed z-40" style="bottom:calc(1.5rem + env(safe-area-inset-bottom));inset-inline-end:1.5rem">
+      <div id="fabBackdrop" class="fixed inset-0 hidden bg-white/60 backdrop-blur-[2px] dark:bg-black/50"></div>
+      <div id="fabMenu" class="absolute bottom-[4.5rem] hidden flex-col-reverse items-end gap-3" style="inset-inline-end:0"></div>
+      <button id="fab" type="button" aria-label="إضافة ملاحظة" aria-expanded="false"
+        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg transition hover:bg-sky-600 active:scale-95"></button>
+    </div>
+
+    <!-- المحرر -->
+    <div id="editor" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-0 backdrop-blur-sm sm:p-4" role="dialog" aria-modal="true">
+      <div id="editorCard" class="modal-enter flex h-full w-full flex-col overflow-hidden border border-slate-200 shadow-2xl dark:border-slate-800 sm:h-auto sm:max-h-[92vh] sm:max-w-xl sm:rounded-2xl">
+        <div id="editorBody" class="flex-1 overflow-y-auto p-5"></div>
+        <div id="editorFooter" class="relative flex items-center justify-between gap-2 border-t border-black/5 px-3 py-2.5 dark:border-white/10"></div>
+      </div>
+    </div>
+
+    <div id="toast" class="pointer-events-none fixed bottom-6 left-1/2 z-[60] -translate-x-1/2 rounded-xl bg-slate-800 px-5 py-2.5 text-sm text-white opacity-0 shadow-lg transition-opacity duration-300"></div>
+    <input id="importFile" type="file" accept="application/json,.json" class="hidden" />
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
