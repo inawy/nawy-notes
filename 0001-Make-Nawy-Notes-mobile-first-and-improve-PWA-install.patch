@@ -1,0 +1,792 @@
+From 59d31a6009c96581f7c841620c60d1092ac857b3 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Fri, 2 Oct 2026 20:36:48 +0300
+Subject: [PATCH] Make Nawy Notes mobile-first and improve PWA install
+
+- 3-row mobile header, full-width search, scrollable tabs, 44px touch targets
+- 2-column cards, hover gated to fine pointers, safe-area + dvh handling
+- full-screen editor on phones with visualViewport keyboard fit and back-gesture close
+- install button (beforeinstallprompt / iOS Safari hint / hidden when installed) + tests
+- SW update prompt instead of auto reload
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01WRWMNWv5a4vyz42Q9S8Vmu
+---
+ docs/decisions.md     |  12 ++++-
+ index.html            |  79 ++++++++++++++++++--------------
+ package.json          |   2 +-
+ src/editor.ts         | 103 ++++++++++++++++++++++++++++++++----------
+ src/lib/icons.ts      |   1 +
+ src/main.ts           |  33 +++++++++++---
+ src/pwa/install.ts    |  88 ++++++++++++++++++++++++++++++++++++
+ src/style.css         |  60 ++++++++++++++++++++----
+ tests/install.test.ts |  80 ++++++++++++++++++++++++++++++++
+ vite.config.ts        |   2 +-
+ 10 files changed, 383 insertions(+), 77 deletions(-)
+ create mode 100644 src/pwa/install.ts
+ create mode 100644 tests/install.test.ts
+
+diff --git a/docs/decisions.md b/docs/decisions.md
+index 71c0ec0..23141f7 100644
+--- a/docs/decisions.md
++++ b/docs/decisions.md
+@@ -32,8 +32,8 @@
+ - صيغة التصدير ليست مغلف nawy الموحّد (`app:"nawy"`, `schemaVersion`, `data`)، والاستيراد لا يرفض إصداراً أحدث، ولا يعرض دمج/استبدال ولا يلتقط نسخة قبل الاستبدال.
+ - الواجهة تستدعي Dexie مباشرة (main.ts/editor.ts) بلا طبقة services/ports.
+ - لا طبقة ترجمة؛ النصوص مكتوبة داخل المكوّنات.
+-- أهداف اللمس 36px (المطلوب 44px)؛ استعمال `mr-*`/`left-1/2` بدل الخصائص المنطقية؛ لا حبس للتركيز في النوافذ؛ القوائم تُخفى بـ display بدل transform.
+-- Service Worker على `autoUpdate` (قد يعيد التحميل أثناء التحرير؛ المطلوب مطالبة "التحديث جاهز").
++- (أُغلق 2026-10-02: أهداف اللمس صارت ≥44px) استعمال `mr-*`/`left-1/2` بدل الخصائص المنطقية؛ لا حبس للتركيز في النوافذ؛ القوائم تُخفى بـ display بدل transform.
++- (أُغلق 2026-10-02: الـ SW صار `prompt` مع شريط «حدّث الآن»).
+ - لا lockfile ولا اختبارات داخل المستودع (الاختبارات المنفَّذة كانت سكربتات مؤقتة خارجه).
+ - لا تحقق بمتصفح حقيقي ولا بـ Dexie الحقيقية.
+ 
+@@ -51,3 +51,11 @@
+ - **القاعدة المخالَفة مؤقتاً:** nawy-quality (lockfile مُلتزَم وبناء قابل لإعادة الإنتاج).
+ - **السبب:** بيئة الإنشاء بلا وصول لـ npm فلا lockfile. الـ workflow يستخدم `npm install` مؤقتاً.
+ - **الإغلاق:** شغّل `npm install` محلياً، التزم بـ `package-lock.json`، ثم بدّل الـ workflow إلى `npm ci`.
++
++## 2026-10-02 · Mobile-first وزر تثبيت PWA
++- **التصميم:** الهاتف هو الأساس (360–430px): هيدر بثلاثة صفوف (الهوية + الإجراءات / بحث بعرض كامل / تبويبات بتمرير أفقي)، شبكة عمودين بهوامش 10px، أهداف لمس ≥44px، `hover` للبطاقات فقط على الأجهزة التي تدعمه، حقول 16px لمنع تكبير iOS، `dvh` و`env(safe-area-inset-*)` للـFAB والتوست والمحرر.
++- **المحرر:** شاشة كاملة على الهاتف (نافذة وسطية من 640px). `visualViewport` يبقي المحرر وشريطه السفلي فوق لوحة المفاتيح. زر/إيماءة الرجوع تغلق المحرر عبر `history.pushState` بدل مغادرة التطبيق.
++- **التثبيت:** `src/pwa/install.ts` (منطق نقي مُختبَر): `beforeinstallprompt` ثم `prompt()` ثم `appinstalled`؛ iOS/iPadOS يعرض الزر مع تعليمات Safari؛ لا زر إن كان التطبيق مثبّتاً (`display-mode`/`navigator.standalone`).
++- **التحديث:** `registerType: 'prompt'` + شريط «حدّث الآن/لاحقاً»؛ لا إعادة تحميل أثناء الكتابة، وتُحفظ المسودة قبل التحديث.
++- **المسارات:** `base: './'`، `start_url`/`scope` نسبيان، لا مسارات مطلقة في الشيفرة (الوحيد `/src/main.ts` مدخل Vite ويُعاد كتابته عند البناء).
++- **حدود التحقق:** اختُبر في Chromium (Playwright) على 360/390/430/1280 بـ Tailwind 3 ومحاكاة Dexie؛ لم يُجرَّ `npm run build` الحقيقي (Tailwind 4 / Dexie الفعليان) ولا اختبار على iOS/Android حقيقيين.
+diff --git a/index.html b/index.html
+index ff1536d..e449dc6 100644
+--- a/index.html
++++ b/index.html
+@@ -20,7 +20,7 @@
+       } catch (e) {}
+     </script>
+   </head>
+-  <body class="min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
++  <body class="min-h-dvh overflow-x-hidden bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
+     <script>
+       // شريط أخطاء مرئي: يعمل حتى لو فشل تحميل شيفرة التطبيق نفسها
+       (function () {
+@@ -31,7 +31,7 @@
+           b = document.createElement('div');
+           b.id = 'fatal';
+           b.setAttribute('role', 'alert');
+-          b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:100;background:#b91c1c;color:#fff;padding:12px 16px;font:14px/1.7 Tahoma,system-ui,sans-serif;max-height:50vh;overflow:auto;direction:rtl';
++          b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:100;background:#b91c1c;color:#fff;padding:12px 16px;font:14px/1.7 Tahoma,system-ui,sans-serif;max-height:50dvh;overflow:auto;direction:rtl';
+           b.innerHTML = '<strong>تعذّر تشغيل التطبيق بشكل سليم</strong><div id="fatalList"></div>';
+           var x = document.createElement('button');
+           x.textContent = 'إغلاق';
+@@ -76,66 +76,79 @@
+         }, 6000);
+       })();
+     </script>
+-    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
+-      <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
+-        <div class="flex shrink-0 items-center gap-2">
+-          <img src="./logo.png" alt="" width="36" height="36" class="h-9 w-9 rounded-xl shadow-sm" />
+-          <span class="hidden text-lg font-semibold tracking-tight sm:block">ناوي نوت</span>
++    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
++      <div class="safe-x mx-auto max-w-6xl">
++        <!-- الصف 1: الهوية + الإجراءات -->
++        <div class="flex items-center gap-1 pt-2">
++          <div class="flex min-w-0 flex-1 items-center gap-2">
++            <img src="./logo.png" alt="" width="36" height="36" class="h-9 w-9 shrink-0 rounded-xl shadow-sm" />
++            <span class="truncate text-lg font-semibold tracking-tight">ناوي نوت</span>
++          </div>
++          <button id="btnInstall" type="button" hidden class="btn-install" aria-label="تثبيت ناوي نوت" title="تثبيت ناوي نوت">
++            <span id="installIcon" aria-hidden="true"></span><span>تثبيت<span class="hidden sm:inline"> ناوي نوت</span></span>
++          </button>
++          <button id="btnBackup" type="button" class="btn-icon" title="نسخ احتياطي" aria-label="نسخ احتياطي"></button>
++          <button id="btnTheme" type="button" class="btn-icon" title="الوضع الليلي" aria-label="الوضع الليلي"></button>
+         </div>
+-        <div id="searchBox" class="relative mx-auto flex max-w-xl flex-1 items-center rounded-xl bg-slate-100 transition focus-within:ring-2 focus-within:ring-sky-400 dark:bg-slate-800">
++        <!-- الصف 2: البحث بعرض كامل -->
++        <div id="searchBox" class="relative mx-auto mt-1 flex h-11 max-w-xl items-center rounded-xl bg-slate-100 transition focus-within:ring-2 focus-within:ring-sky-400 dark:bg-slate-800">
+           <span id="searchIcon" class="pointer-events-none ps-3 text-slate-400"></span>
+-          <input id="search" type="search" autocomplete="off" placeholder="ابحث في ملاحظاتك..."
+-            class="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-slate-400" />
+-          <button id="btnSort" type="button" class="btn-icon !p-2" aria-haspopup="menu" aria-expanded="false"></button>
+-          <button id="btnLayout" type="button" class="btn-icon !p-2 me-1"></button>
+-          <div id="sortMenu" role="menu" class="modal-enter absolute end-0 top-full z-40 mt-2 hidden w-60 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"></div>
+-        </div>
+-        <div class="flex shrink-0 items-center gap-1">
+-          <button id="btnBackup" class="btn-icon" title="نسخ احتياطي"></button>
+-          <button id="btnTheme" class="btn-icon" title="الوضع الليلي"></button>
++          <input id="search" type="search" autocomplete="off" enterkeyhint="search" placeholder="ابحث في ملاحظاتك..."
++            class="h-full min-w-0 flex-1 bg-transparent px-3 text-base outline-none placeholder:text-slate-400" />
++          <button id="btnSort" type="button" class="btn-icon" aria-haspopup="menu" aria-expanded="false"></button>
++          <button id="btnLayout" type="button" class="btn-icon"></button>
++          <div id="sortMenu" role="menu" class="modal-enter absolute end-0 top-full z-40 mt-2 hidden w-64 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"></div>
+         </div>
++        <!-- الصف 3: التبويبات (تمرير أفقي) -->
++        <nav id="tabs" class="no-scrollbar mx-auto flex max-w-xl gap-1 overflow-x-auto py-1 text-sm sm:justify-center" aria-label="العروض"></nav>
+       </div>
+-      <nav id="tabs" class="mx-auto flex max-w-6xl gap-1 px-4 pb-2 text-sm"></nav>
+     </header>
+ 
+-    <main class="mx-auto max-w-6xl px-4 py-6 pb-28">
+-      <div id="trashBar" class="mx-auto mb-6 hidden max-w-xl items-center justify-between rounded-xl bg-slate-100 px-4 py-2.5 text-sm text-slate-500 dark:bg-slate-800">
++    <main class="safe-x main-pad mx-auto max-w-6xl pt-3 sm:pt-6">
++      <div id="trashBar" class="mx-auto mb-4 hidden max-w-xl items-center justify-between gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm text-slate-500 dark:bg-slate-800">
+         <span>تُحذف الملاحظات نهائياً بعد 30 يوماً.</span>
+-        <button id="btnEmptyTrash" class="font-medium text-red-500 hover:underline">إفراغ المهملات</button>
++        <button id="btnEmptyTrash" type="button" class="min-h-11 shrink-0 px-1 font-medium text-red-500">إفراغ المهملات</button>
+       </div>
+ 
+-      <section id="pinnedSection" class="mb-6 hidden">
+-        <h3 class="mb-3 px-1 text-xs font-semibold tracking-wider text-slate-400">مثبتة</h3>
++      <section id="pinnedSection" class="mb-4 hidden">
++        <h3 class="mb-2 px-1 text-xs font-semibold tracking-wider text-slate-400">مثبتة</h3>
+         <div id="pinnedGrid" class="notes-grid"></div>
+       </section>
+       <section>
+-        <h3 id="othersTitle" class="mb-3 hidden px-1 text-xs font-semibold tracking-wider text-slate-400">أخرى</h3>
++        <h3 id="othersTitle" class="mb-2 hidden px-1 text-xs font-semibold tracking-wider text-slate-400">أخرى</h3>
+         <div id="grid" class="notes-grid"></div>
+       </section>
+ 
+-      <div id="empty" class="hidden flex-col items-center py-20 text-center text-slate-400">
++      <div id="empty" class="hidden flex-col items-center py-16 text-center text-slate-400">
+         <div id="emptyIcon" class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"></div>
+         <p id="emptyText" class="text-base text-slate-500 dark:text-slate-400"></p>
+       </div>
+     </main>
+ 
+     <!-- زر الإضافة العائم -->
+-    <div id="fabRoot" class="fixed z-40" style="bottom:calc(1.5rem + env(safe-area-inset-bottom));inset-inline-end:1.5rem">
++    <div id="fabRoot" class="fixed z-40">
+       <div id="fabBackdrop" class="fixed inset-0 hidden bg-white/60 backdrop-blur-[2px] dark:bg-black/50"></div>
+       <div id="fabMenu" class="absolute bottom-[4.5rem] hidden flex-col-reverse items-end gap-3" style="inset-inline-end:0"></div>
+       <button id="fab" type="button" aria-label="إضافة ملاحظة" aria-expanded="false"
+-        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg transition hover:bg-sky-600 active:scale-95"></button>
++        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg transition active:scale-95"></button>
++    </div>
++
++    <!-- شريط التحديث: لا نعيد التحميل أبداً وسط الكتابة، المستخدم يقرر -->
++    <div id="updateBar" role="status" hidden class="update-bar">
++      <span class="min-w-0 flex-1">يتوفر إصدار أحدث من ناوي نوت</span>
++      <button id="updateNow" type="button" class="btn-primary">حدّث الآن</button>
++      <button id="updateLater" type="button" class="btn-icon !text-white/80" aria-label="لاحقاً"></button>
+     </div>
+ 
+-    <!-- المحرر -->
+-    <div id="editor" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-0 backdrop-blur-sm sm:p-4" role="dialog" aria-modal="true">
+-      <div id="editorCard" class="modal-enter flex h-full w-full flex-col overflow-hidden border border-slate-200 shadow-2xl dark:border-slate-800 sm:h-auto sm:max-h-[92vh] sm:max-w-xl sm:rounded-2xl">
+-        <div id="editorBody" class="flex-1 overflow-y-auto p-5"></div>
+-        <div id="editorFooter" class="relative flex items-center justify-between gap-2 border-t border-black/5 px-3 py-2.5 dark:border-white/10"></div>
++    <!-- المحرر: شاشة كاملة على الهاتف، نافذة وسطية على الشاشات الكبيرة -->
++    <div id="editor" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-0 backdrop-blur-sm sm:p-4" role="dialog" aria-modal="true" aria-label="محرر الملاحظة">
++      <div id="editorCard" class="modal-enter flex h-full w-full flex-col overflow-hidden border border-slate-200 shadow-2xl dark:border-slate-800 sm:h-auto sm:max-h-[92dvh] sm:max-w-xl sm:rounded-2xl">
++        <div id="editorBody" class="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5"></div>
++        <div id="editorFooter" class="relative flex items-center justify-between gap-1 border-t border-black/5 px-2 py-1.5 dark:border-white/10"></div>
+       </div>
+     </div>
+ 
+-    <div id="toast" class="pointer-events-none fixed bottom-6 left-1/2 z-[60] -translate-x-1/2 rounded-xl bg-slate-800 px-5 py-2.5 text-sm text-white opacity-0 shadow-lg transition-opacity duration-300"></div>
++    <div id="toast" role="status" aria-live="polite" class="pointer-events-none fixed left-1/2 z-[60] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-slate-800 px-5 py-2.5 text-center text-sm text-white opacity-0 shadow-lg transition-opacity duration-300"></div>
+     <input id="importFile" type="file" accept="application/json,.json" class="hidden" />
+ 
+     <script type="module" src="/src/main.ts"></script>
+diff --git a/package.json b/package.json
+index a164748..dada1ad 100644
+--- a/package.json
++++ b/package.json
+@@ -10,7 +10,7 @@
+     "preview": "vite preview",
+     "typecheck": "tsc --noEmit",
+     "icons": "node scripts/make-icons.mjs",
+-    "test": "node --test tests/envelope.test.ts"
++    "test": "node --test tests/*.test.ts"
+   },
+   "dependencies": {
+     "dexie": "^4.0.0",
+diff --git a/src/editor.ts b/src/editor.ts
+index 6b3cd66..d8faba7 100644
+--- a/src/editor.ts
++++ b/src/editor.ts
+@@ -53,6 +53,55 @@ function touch() {
+   save();
+ }
+ 
++
++// ---------- تجربة الهاتف: لوحة المفاتيح وزر الرجوع ----------
++/** يحافظ على المحرر داخل المساحة المرئية فوق لوحة المفاتيح (iOS لا يغيّر الـ layout viewport). */
++function fitViewport() {
++  const vv = window.visualViewport;
++  const el = document.getElementById('editor');
++  if (!vv || !el) return;
++  const kb = window.innerHeight - vv.height - vv.offsetTop > 80 || vv.height < window.innerHeight - 120;
++  el.classList.toggle('kb-open', kb);
++  if (kb) {
++    el.style.top = `${vv.offsetTop}px`;
++    el.style.height = `${vv.height}px`;
++    el.style.bottom = 'auto';
++  } else {
++    el.style.top = el.style.height = el.style.bottom = '';
++  }
++}
++function trackViewport(on: boolean) {
++  const vv = window.visualViewport;
++  if (!vv) return;
++  vv[on ? 'addEventListener' : 'removeEventListener']('resize', fitViewport);
++  vv[on ? 'addEventListener' : 'removeEventListener']('scroll', fitViewport);
++  const el = document.getElementById('editor');
++  if (!on && el) {
++    el.classList.remove('kb-open');
++    el.style.top = el.style.height = el.style.bottom = '';
++  } else fitViewport();
++}
++
++/** زر/إيماءة الرجوع في الهاتف يغلق المحرر بدل مغادرة التطبيق. */
++let histPushed = false;
++function pushHist() {
++  try {
++    history.pushState({ nawyNote: 'editor' }, '');
++    histPushed = true;
++  } catch { /* بيئة بلا history: نتجاهل */ }
++}
++function popHist() {
++  if (!histPushed) return;
++  histPushed = false;
++  try { history.back(); } catch { /* ignore */ }
++}
++window.addEventListener('popstate', () => {
++  if (histPushed) {
++    histPushed = false; // المتصفح رجع بالفعل
++    void closeEditor();
++  }
++});
++
+ export function isEditorOpen(): boolean {
+   return current !== null;
+ }
+@@ -78,6 +127,8 @@ export function openEditor(note: Note, isNew: boolean, initial?: InitialAction):
+   el.classList.remove('hidden');
+   el.classList.add('flex');
+   document.body.classList.add('overflow-hidden');
++  trackViewport(true);
++  pushHist();
+   el.onclick = (e) => {
+     if (e.target === el) void closeEditor();
+   };
+@@ -124,11 +175,13 @@ export async function closeEditor(): Promise<void> {
+   el.classList.add('hidden');
+   el.classList.remove('flex');
+   document.body.classList.remove('overflow-hidden');
++  trackViewport(false);
++  popHist();
+ }
+ 
+ function applyColor(n: Note) {
+   $('#editorCard').className =
+-    `modal-enter relative flex h-full w-full flex-col overflow-hidden border border-black/5 shadow-2xl dark:border-white/10 sm:h-auto sm:max-h-[92vh] sm:max-w-xl sm:rounded-2xl nc-${n.color}`;
++    `modal-enter relative flex h-full w-full flex-col overflow-hidden border border-black/5 shadow-2xl dark:border-white/10 sm:h-auto sm:max-h-[92dvh] sm:max-w-xl sm:rounded-2xl nc-${n.color}`;
+ }
+ 
+ function renderAll() {
+@@ -163,7 +216,7 @@ function renderNote(n: Note) {
+ // ---------- نص ----------
+ function renderText(n: Note, root: HTMLElement) {
+   root.innerHTML = `<textarea id="eText" rows="8" placeholder="اكتب ملاحظتك..."
+-    class="w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none placeholder:text-slate-400">${esc(n.body)}</textarea>`;
++    class="w-full resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-slate-400">${esc(n.body)}</textarea>`;
+   const ta = $<HTMLTextAreaElement>('#eText', root);
+   const fit = () => {
+     ta.style.height = 'auto';
+@@ -184,7 +237,7 @@ function renderList(n: Note, root: HTMLElement) {
+       <input type="checkbox" class="h-4.5 w-4.5 shrink-0 accent-sky-500" ${it.done ? 'checked' : ''} aria-label="تم" />
+       <input type="text" value="${esc(it.text)}" placeholder="عنصر"
+         class="min-w-0 flex-1 bg-transparent py-1 text-[15px] outline-none placeholder:text-slate-400 ${it.done ? 'line-through opacity-50' : ''}" />
+-      <button type="button" class="rm btn-icon !p-1" aria-label="حذف العنصر">${icon('x', 'w-4 h-4')}</button>
++      <button type="button" class="rm btn-icon" aria-label="حذف العنصر">${icon('x', 'w-4 h-4')}</button>
+     </div>`;
+   const draw = () => {
+     root.innerHTML = `<div class="space-y-1" id="rows">${n.items.map(row).join('')}</div>
+@@ -283,7 +336,7 @@ function renderMedia() {
+     html += `<div class="grid gap-2 ${imgs.length > 1 ? 'grid-cols-2' : ''}">${imgs
+       .map(
+         (a) => `<div class="relative overflow-hidden rounded-xl">
+-          <img src="${blobUrl(a.blob!)}" alt="صورة مرفقة" class="max-h-[50vh] w-full object-cover" />${rmBtn(a.id)}</div>`,
++          <img src="${blobUrl(a.blob!)}" alt="صورة مرفقة" class="max-h-[50dvh] w-full object-cover" />${rmBtn(a.id)}</div>`,
+       )
+       .join('')}</div>`;
+   }
+@@ -293,7 +346,7 @@ function renderMedia() {
+   }
+   for (const a of audios) {
+     html += `<div class="flex items-center gap-2">
+-      <audio controls preload="metadata" src="${blobUrl(a.blob!)}" class="h-10 min-w-0 flex-1"></audio>${rmBtn(a.id, 'btn-icon !p-1.5')}</div>`;
++      <audio controls preload="metadata" src="${blobUrl(a.blob!)}" class="h-10 min-w-0 flex-1"></audio>${rmBtn(a.id, 'btn-icon')}</div>`;
+   }
+   if (recorder) {
+     html += `<div class="flex items-center gap-3 rounded-xl bg-red-500/10 px-3 py-2">
+@@ -418,8 +471,7 @@ function renderDrawMode(n: Note) {
+   }
+   const d = att.drawing;
+   const swatch = (c: string) =>
+-    `<button type="button" data-color="${c}" class="pen-color h-6 w-6 rounded-full border-2 border-transparent"
+-      style="background:${c === 'ink' ? 'currentColor' : c}" aria-label="لون القلم"></button>`;
++    `<button type="button" data-color="${c}" class="pen-color flex h-11 w-11 items-center justify-center" aria-label="لون القلم"><span class="block h-6 w-6 rounded-full border border-black/20" style="background:${c === 'ink' ? 'currentColor' : c}"></span></button>`;
+ 
+   $('#editorFooter').style.display = 'none';
+   const root = $('#editorBody');
+@@ -428,16 +480,16 @@ function renderDrawMode(n: Note) {
+       <span class="text-sm font-medium">رسم</span>
+       <button type="button" id="dDone" class="btn-primary">تم</button>
+     </div>
+-    <div class="mb-2 flex flex-wrap items-center gap-1">
+-      <button type="button" data-tool="pen" class="tool btn-icon !p-2" title="قلم">${icon('pencil')}</button>
+-      <button type="button" data-tool="eraser" class="tool btn-icon !p-2 text-xs font-medium" title="ممحاة">ممحاة</button>
++    <div class="mb-2 flex flex-wrap items-center">
++      <button type="button" data-tool="pen" class="tool btn-icon" title="قلم">${icon('pencil')}</button>
++      <button type="button" data-tool="eraser" class="tool btn-icon text-xs font-medium" title="ممحاة">ممحاة</button>
+       <span class="mx-1 h-5 w-px bg-black/10 dark:bg-white/20"></span>
+       ${PEN_COLORS.map(swatch).join('')}
+       <span class="mx-1 h-5 w-px bg-black/10 dark:bg-white/20"></span>
+-      ${PEN_SIZES.map((s) => `<button type="button" data-size="${s}" class="pen-size flex h-8 w-8 items-center justify-center rounded-lg" aria-label="حجم القلم"><span class="rounded-full bg-current" style="width:${s + 2}px;height:${s + 2}px"></span></button>`).join('')}
++      ${PEN_SIZES.map((s) => `<button type="button" data-size="${s}" class="pen-size flex h-11 w-11 items-center justify-center rounded-lg" aria-label="حجم القلم"><span class="rounded-full bg-current" style="width:${s + 2}px;height:${s + 2}px"></span></button>`).join('')}
+       <span class="flex-1"></span>
+-      <button type="button" id="dUndo" class="btn-icon !p-2" title="تراجع">${icon('undo')}</button>
+-      <button type="button" id="dClear" class="btn-icon !p-2" title="مسح الكل">${icon('trash')}</button>
++      <button type="button" id="dUndo" class="btn-icon" title="تراجع">${icon('undo')}</button>
++      <button type="button" id="dClear" class="btn-icon" title="مسح الكل">${icon('trash')}</button>
+     </div>
+     <div class="draw-surface overflow-hidden border border-black/10 dark:border-white/10">
+       <canvas id="dCanvas" class="block h-auto w-full text-slate-900 dark:text-slate-100" style="aspect-ratio:${d.width}/${d.height}" dir="ltr"></canvas>
+@@ -453,9 +505,10 @@ function renderDrawMode(n: Note) {
+     root.querySelectorAll<HTMLElement>('.tool').forEach((t) => t.classList.toggle('active', t.dataset.tool === b.tool));
+     root.querySelectorAll<HTMLElement>('.pen-color').forEach((t) => {
+       const on = t.dataset.color === b.color && b.tool === 'pen';
+-      t.classList.toggle('ring-2', on);
+-      t.classList.toggle('ring-sky-500', on);
+-      t.classList.toggle('ring-offset-1', on);
++      const dot = t.firstElementChild as HTMLElement;
++      dot.classList.toggle('ring-2', on);
++      dot.classList.toggle('ring-sky-500', on);
++      dot.classList.toggle('ring-offset-1', on);
+     });
+     root.querySelectorAll<HTMLElement>('.pen-size').forEach((t) =>
+       t.classList.toggle('bg-black/10', Number(t.dataset.size) === b.size),
+@@ -495,29 +548,29 @@ function renderFooter() {
+   const f = $('#editorFooter');
+   f.style.display = '';
+ 
+-  const addMenu = `<div id="ePop" role="menu" class="absolute bottom-full start-3 z-10 mb-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-slate-800 shadow-lg dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
++  const addMenu = `<div id="ePop" role="menu" class="absolute bottom-full start-2 z-10 mb-2 w-64 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-slate-800 shadow-lg dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+       <button type="button" role="menuitem" data-add="image" class="menu-item">${icon('image')} صورة</button>
+       <button type="button" role="menuitem" data-add="audio" class="menu-item">${icon('mic')} تسجيل صوتي</button>
+       <button type="button" role="menuitem" data-add="draw" class="menu-item">${icon('pencil')} رسم</button>
+       <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
+       <button type="button" role="menuitem" data-add="list" class="menu-item">${icon('list')} ${n.type === 'list' ? 'إخفاء خانات الاختيار' : 'إظهار خانات الاختيار'}</button>
+     </div>`;
+-  const colorMenu = `<div id="ePop" class="absolute bottom-full start-3 z-10 mb-2 flex w-[13.5rem] flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900">
++  const colorMenu = `<div id="ePop" class="absolute bottom-full start-2 z-10 mb-2 flex w-[15.5rem] max-w-[calc(100vw-1.5rem)] flex-wrap rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+       ${COLOR_IDS.map(
+         (c) => `<button type="button" data-color="${c}" title="${COLOR_LABELS[c]}" aria-label="${COLOR_LABELS[c]}"
+-          class="h-7 w-7 rounded-full border-2 nc-${c} ${n.color === c ? 'border-slate-700 dark:border-white' : 'border-black/10 dark:border-white/20'}"></button>`,
++          class="flex h-11 w-11 items-center justify-center"><span class="block h-8 w-8 rounded-full border-2 nc-${c} ${n.color === c ? 'border-slate-700 dark:border-white' : 'border-black/10 dark:border-white/20'}"></span></button>`,
+       ).join('')}</div>`;
+ 
+   f.innerHTML = `
+     <div class="flex items-center gap-1">
+-      <button type="button" id="eAdd" class="btn-icon !p-2 ${pop === 'add' ? 'active' : ''}" title="إضافة" aria-label="إضافة" aria-haspopup="menu" aria-expanded="${pop === 'add'}">${icon('plus')}</button>
+-      <button type="button" id="ePalette" class="btn-icon !p-2 ${pop === 'color' ? 'active' : ''}" title="اللون" aria-label="اللون">${icon('palette')}</button>
++      <button type="button" id="eAdd" class="btn-icon ${pop === 'add' ? 'active' : ''}" title="إضافة" aria-label="إضافة" aria-haspopup="menu" aria-expanded="${pop === 'add'}">${icon('plus')}</button>
++      <button type="button" id="ePalette" class="btn-icon ${pop === 'color' ? 'active' : ''}" title="اللون" aria-label="اللون">${icon('palette')}</button>
+     </div>
+     <div class="flex items-center gap-1">
+-      <button type="button" id="ePin" class="btn-icon !p-2 ${n.pinned ? 'active' : ''}" title="تثبيت" aria-label="تثبيت">${icon('pin')}</button>
+-      <button type="button" id="eArchive" class="btn-icon !p-2" title="${n.status === 'archived' ? 'إلغاء الأرشفة' : 'أرشفة'}" aria-label="أرشفة">${icon('archive')}</button>
+-      <button type="button" id="eTrash" class="btn-icon !p-2 hover:!text-red-500" title="نقل للمهملات" aria-label="نقل للمهملات">${icon('trash')}</button>
+-      <button type="button" id="eDone" class="btn-primary mr-1">تم</button>
++      <button type="button" id="ePin" class="btn-icon ${n.pinned ? 'active' : ''}" title="تثبيت" aria-label="تثبيت">${icon('pin')}</button>
++      <button type="button" id="eArchive" class="btn-icon" title="${n.status === 'archived' ? 'إلغاء الأرشفة' : 'أرشفة'}" aria-label="أرشفة">${icon('archive')}</button>
++      <button type="button" id="eTrash" class="btn-icon hover:!text-red-500" title="نقل للمهملات" aria-label="نقل للمهملات">${icon('trash')}</button>
++      <button type="button" id="eDone" class="btn-primary ms-1">تم</button>
+     </div>
+     ${pop === 'add' ? addMenu : pop === 'color' ? colorMenu : ''}`;
+ 
+diff --git a/src/lib/icons.ts b/src/lib/icons.ts
+index 59b6f66..ba824a9 100644
+--- a/src/lib/icons.ts
++++ b/src/lib/icons.ts
+@@ -23,6 +23,7 @@ const PATHS = {
+   sort: 'M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12',
+   grid: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z',
+   rows: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h14a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4z',
++  phone: 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z',
+   notes: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',
+ } as const;
+ 
+diff --git a/src/main.ts b/src/main.ts
+index 69f835f..fdf7596 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -11,6 +11,7 @@ import { icon } from './lib/icons';
+ import { drawingPreviewSvg } from './lib/draw';
+ import { toast } from './lib/toast';
+ import { appReady, dbMessage, reportError } from './lib/report';
++import { createInstaller, IOS_HELP, type InstallState } from './pwa/install';
+ import { closeEditor, flushEditor, isEditorOpen, openEditor, setOnSaved } from './editor';
+ 
+ let view: View = 'notes';
+@@ -27,6 +28,8 @@ const VIEW_LABEL: Record<View, string> = { notes: 'الملاحظات', archive:
+ function mountChrome() {
+   $('#searchIcon').innerHTML = icon('search');
+   $('#btnBackup').innerHTML = icon('download');
++  $('#installIcon').innerHTML = icon('phone', 'w-5 h-5');
++  $('#updateLater').innerHTML = icon('x', 'w-5 h-5');
+   mountFab();
+   syncToolbar();
+   $('#emptyIcon').innerHTML = icon('notes', 'w-10 h-10');
+@@ -155,8 +158,8 @@ function cardHTML(n: Note): string {
+ 
+   const actions = trash
+     ? `<div class="mt-3 flex gap-2 border-t border-black/5 pt-2 dark:border-white/10">
+-         <button type="button" data-act="restore" class="flex items-center gap-1 text-xs font-medium text-sky-600 dark:text-sky-300">${icon('restore', 'w-4 h-4')} استعادة</button>
+-         <button type="button" data-act="purge" class="mr-auto flex items-center gap-1 text-xs font-medium text-red-500">${icon('trash', 'w-4 h-4')} حذف نهائي</button>
++         <button type="button" data-act="restore" class="flex min-h-11 items-center gap-1 px-1 text-xs font-medium text-sky-600 dark:text-sky-300">${icon('restore', 'w-4 h-4')} استعادة</button>
++         <button type="button" data-act="purge" class="ms-auto flex min-h-11 items-center gap-1 px-1 text-xs font-medium text-red-500">${icon('trash', 'w-4 h-4')} حذف نهائي</button>
+        </div>`
+     : '';
+ 
+@@ -168,7 +171,7 @@ function cardHTML(n: Note): string {
+     actions;
+ 
+   return `<article class="note-card nc-${n.color} cursor-pointer overflow-hidden rounded-2xl border border-black/5 dark:border-white/5" data-id="${n.id}" ${trash ? '' : 'tabindex="0"'}>
+-    ${cover}${inner ? `<div class="p-4 ${cover ? 'pt-3' : ''}">${inner}</div>` : ''}
++    ${cover}${inner ? `<div class="p-3 sm:p-4 ${cover ? 'pt-3' : ''}">${inner}</div>` : ''}
+   </article>`;
+ }
+ 
+@@ -207,11 +210,11 @@ function render(notes: Note[]) {
+ 
+ // ---------- تخطيط متدرّج ----------
+ const ROW = 4; // يطابق grid-auto-rows في CSS
+-const GAP = 16; // المسافة الرأسية بين البطاقات
+ const ro = new ResizeObserver((entries) => entries.forEach((e) => setSpan(e.target as HTMLElement)));
+ 
+ function setSpan(el: HTMLElement) {
+-  el.style.gridRowEnd = `span ${Math.max(1, Math.ceil((el.offsetHeight + GAP) / ROW))}`;
++  const gap = parseFloat(getComputedStyle(el.parentElement ?? el).columnGap) || 16; // الرأسية = الأفقية
++  el.style.gridRowEnd = `span ${Math.max(1, Math.ceil((el.offsetHeight + gap) / ROW))}`;
+ }
+ 
+ function layoutMasonry() {
+@@ -492,10 +495,28 @@ wire();
+ subscribe();
+ void purgeOldTrash();
+ 
+-registerSW({
++// ---------- تثبيت التطبيق (PWA) ----------
++const installer = createInstaller(window, (st: InstallState) => {
++  $('#btnInstall').hidden = st === 'hidden';
++});
++installer.refresh();
++$('#btnInstall').onclick = async () => {
++  const r = await installer.install();
++  if (r === 'ios-help') toast(IOS_HELP);
++  else if (r === 'accepted') toast('جارٍ تثبيت ناوي نوت…');
++};
++
++// ---------- التحديث: لا نعيد التحميل وسط الكتابة، المستخدم يقرر ----------
++const updateSW = registerSW({
+   immediate: true,
++  onNeedRefresh: () => ($('#updateBar').hidden = false),
+   onOfflineReady: () => toast('جاهز للعمل بدون إنترنت'),
+ });
++$('#updateNow').onclick = async () => {
++  await flushEditor(); // لا يضيع شيء مما يُكتب
++  await updateSW(true);
++};
++$('#updateLater').onclick = () => (($('#updateBar').hidden = true));
+ 
+ // تخزين دائم: يمنع المتصفح من مسح البيانات تحت ضغط المساحة
+ void navigator.storage?.persist?.();
+diff --git a/src/pwa/install.ts b/src/pwa/install.ts
+new file mode 100644
+index 0000000..fc138b8
+--- /dev/null
++++ b/src/pwa/install.ts
+@@ -0,0 +1,88 @@
++/**
++ * منطق زر «تثبيت ناوي نوت» — بلا اعتماد على DOM حتى يمكن اختباره بـ node:test.
++ *  - Chromium/Android: نحفظ حدث beforeinstallprompt ونستدعي prompt() عند الضغط.
++ *  - iOS/iPadOS: لا يوجد beforeinstallprompt؛ نُظهر الزر ونعرض تعليمات Safari.
++ *  - مثبّت أصلاً (standalone): لا يظهر الزر.
++ */
++export type InstallState = 'hidden' | 'prompt' | 'ios';
++export type InstallResult = 'accepted' | 'dismissed' | 'ios-help' | 'unavailable';
++
++export const IOS_HELP = 'في Safari: اضغط مشاركة ثم إضافة إلى الشاشة الرئيسية';
++
++interface InstallPromptEvent extends Event {
++  prompt(): Promise<void>;
++  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
++}
++
++/** الجزء من window الذي نحتاجه (يسهّل المحاكاة في الاختبار). */
++export interface InstallEnv {
++  addEventListener(type: string, fn: (e: Event) => void): void;
++  matchMedia?(q: string): { matches: boolean };
++  navigator: { userAgent: string; platform?: string; maxTouchPoints?: number; standalone?: boolean };
++}
++
++/** iPhone/iPad (بما فيها iPadOS 13+ التي تعرّف نفسها كـ Mac بلمس متعدد). */
++export function isIOS(nav: InstallEnv['navigator']): boolean {
++  if (/iPad|iPhone|iPod/.test(nav.userAgent)) return true;
++  return nav.platform === 'MacIntel' && (nav.maxTouchPoints ?? 0) > 1;
++}
++
++export function isStandalone(env: InstallEnv): boolean {
++  if (env.navigator.standalone === true) return true; // iOS
++  try {
++    return !!(
++      env.matchMedia?.('(display-mode: standalone)').matches ||
++      env.matchMedia?.('(display-mode: fullscreen)').matches ||
++      env.matchMedia?.('(display-mode: minimal-ui)').matches
++    );
++  } catch {
++    return false;
++  }
++}
++
++export function createInstaller(env: InstallEnv, onChange: (s: InstallState) => void) {
++  let deferred: InstallPromptEvent | null = null;
++  let installed = isStandalone(env);
++  const ios = isIOS(env.navigator);
++
++  const state = (): InstallState => {
++    if (installed) return 'hidden';
++    if (deferred) return 'prompt';
++    return ios ? 'ios' : 'hidden';
++  };
++  const emit = () => onChange(state());
++
++  env.addEventListener('beforeinstallprompt', (e) => {
++    e.preventDefault(); // نتحكم في التوقيت بدل شريط المتصفح التلقائي
++    deferred = e as InstallPromptEvent;
++    emit();
++  });
++  env.addEventListener('appinstalled', () => {
++    installed = true;
++    deferred = null;
++    emit();
++  });
++
++  return {
++    state,
++    refresh: emit,
++    async install(): Promise<InstallResult> {
++      if (deferred) {
++        const ev = deferred;
++        deferred = null; // الحدث يُستعمل مرة واحدة فقط
++        try {
++          await ev.prompt();
++          const { outcome } = await ev.userChoice;
++          if (outcome === 'accepted') installed = true;
++          emit();
++          return outcome;
++        } catch {
++          emit();
++          return 'unavailable';
++        }
++      }
++      if (state() === 'ios') return 'ios-help';
++      return 'unavailable';
++    },
++  };
++}
+diff --git a/src/style.css b/src/style.css
+index f46d825..adf0ef6 100644
+--- a/src/style.css
++++ b/src/style.css
+@@ -12,36 +12,78 @@
+ @layer base {
+   * { -webkit-tap-highlight-color: transparent; }
+   body { font-family: var(--font-sans); }
+-  button { cursor: pointer; }
++  button { cursor: pointer; touch-action: manipulation; }
++  html { -webkit-text-size-adjust: 100%; }
++  /* 16px على الهاتف يمنع تكبير iOS التلقائي عند التركيز */
++  input, textarea { font-size: max(16px, 1em); }
++  @media (min-width: 640px) { input, textarea { font-size: inherit; } }
+ }
+ 
+ @layer components {
++  /* كل أهداف اللمس ≥ 44px */
+   .btn-icon {
+-    @apply rounded-xl p-2.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200;
++    @apply inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200;
+   }
+   .btn-icon.active { @apply text-sky-500; }
+   .btn-primary {
+-    @apply rounded-xl bg-sky-500 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-sky-600;
++    @apply min-h-11 rounded-xl bg-sky-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-sky-600;
+   }
+-  .menu-item { @apply flex w-full items-center gap-2 px-3 py-2 text-start text-sm hover:bg-slate-50 dark:hover:bg-slate-800; }
+-  .tab { @apply rounded-lg px-3 py-1.5 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800; }
++  .menu-item { @apply flex min-h-11 w-full items-center gap-3 px-4 py-2 text-start text-sm hover:bg-slate-50 dark:hover:bg-slate-800; }
++  .tab { @apply inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-lg px-4 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800; }
+   .tab[aria-current='page'] { @apply bg-sky-50 font-medium text-sky-600 dark:bg-sky-950 dark:text-sky-300; }
+ }
+ 
++/* زر التثبيت */
++.btn-install {
++  display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding-inline: 0.875rem;
++  border-radius: 0.75rem; background: #0ea5e9; color: #fff; font-size: 0.875rem; font-weight: 500; white-space: nowrap;
++}
++.btn-install[hidden], .update-bar[hidden] { display: none !important; }
++.btn-install:active { transform: scale(0.97); }
++
++/* شريط التحديث */
++.update-bar {
++  position: fixed; z-index: 55; display: flex; align-items: center; gap: 0.5rem;
++  inset-inline: 0.75rem; bottom: calc(5.5rem + env(safe-area-inset-bottom));
++  max-width: 28rem; margin-inline: auto; padding: 0.5rem 0.75rem; border-radius: 0.875rem;
++  background: #1e293b; color: #fff; font-size: 0.875rem; box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.3);
++}
++
++/* هوامش آمنة (notch / الحواف المنحنية) */
++.safe-x { padding-inline: max(0.75rem, env(safe-area-inset-left), env(safe-area-inset-right)); }
++@media (min-width: 640px) { .safe-x { padding-inline: max(1rem, env(safe-area-inset-left), env(safe-area-inset-right)); } }
++.main-pad { padding-bottom: calc(6.5rem + env(safe-area-inset-bottom)); }
++#fabRoot { bottom: calc(1rem + env(safe-area-inset-bottom)); inset-inline-end: max(1rem, env(safe-area-inset-left)); }
++#toast { bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
++.no-scrollbar { scrollbar-width: none; }
++.no-scrollbar::-webkit-scrollbar { display: none; }
++
++/* المحرر: ارتفاع ديناميكي + حدود آمنة؛ لوحة المفاتيح تُدار عبر visualViewport (editor.ts) */
++#editor { height: 100dvh; }
++@media (max-width: 639.98px) {
++  #editorCard { padding-top: env(safe-area-inset-top); padding-inline: env(safe-area-inset-left) env(safe-area-inset-right); border-width: 0; }
++  #editorFooter { padding-bottom: max(0.375rem, env(safe-area-inset-bottom)); }
++  #editor.kb-open #editorCard { padding-top: 0; }
++  #editor.kb-open #editorFooter { padding-bottom: 0.375rem; }
++}
++
+ /* تخطيط متدرّج (masonry) بترتيب قراءة صفّي: صفوف 4px وكل بطاقة تمتد على عدد منها (يحسبه main.ts) */
+-.notes-grid { display: grid; column-gap: 1rem; row-gap: 0; grid-auto-rows: 4px; align-items: start; grid-template-columns: minmax(0, 1fr); }
+-@media (min-width: 640px) { .notes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
++.notes-grid { --gap: 0.625rem; display: grid; column-gap: var(--gap); row-gap: 0; grid-auto-rows: 4px; align-items: start; grid-template-columns: repeat(2, minmax(0, 1fr)); }
++@media (min-width: 640px) { .notes-grid { --gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+ @media (min-width: 1024px) { .notes-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+ @media (min-width: 1280px) { .notes-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+ /* عرض الصفوف (قائمة) */
+-html[data-layout='list'] .notes-grid { grid-template-columns: minmax(0, 1fr); max-width: 42rem; margin-inline: auto; }
++html[data-layout='list'] .notes-grid { --gap: 0.625rem; grid-template-columns: minmax(0, 1fr); max-width: 42rem; margin-inline: auto; }
+ 
+ .note-card {
+   -webkit-touch-callout: none;
+   box-shadow: var(--shadow-card);
+   transition: transform 0.15s ease, box-shadow 0.15s ease;
+ }
+-.note-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
++@media (hover: hover) and (pointer: fine) {
++  .note-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
++}
++.note-card { overflow-wrap: anywhere; }
+ 
+ /* ألوان الملاحظات: متغيّر واحد لكل لون يتبدّل مع الوضع الداكن */
+ :root {
+diff --git a/tests/install.test.ts b/tests/install.test.ts
+new file mode 100644
+index 0000000..3e8e4c8
+--- /dev/null
++++ b/tests/install.test.ts
+@@ -0,0 +1,80 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { createInstaller, isIOS, isStandalone, type InstallEnv } from '../src/pwa/install.ts';
++
++function fakeEnv(nav: Partial<InstallEnv['navigator']> = {}, standalone = false) {
++  const h: Record<string, (e: Event) => void> = {};
++  const env: InstallEnv = {
++    addEventListener: (t, fn) => void (h[t] = fn),
++    matchMedia: (q) => ({ matches: standalone && q.includes('standalone') }),
++    navigator: { userAgent: 'Mozilla/5.0 (Linux; Android 14) Chrome/120', ...nav },
++  };
++  return { env, h };
++}
++const bip = (outcome: 'accepted' | 'dismissed' = 'accepted') => {
++  let prevented = false, prompted = 0;
++  return {
++    preventDefault: () => void (prevented = true),
++    prompt: async () => void prompted++,
++    userChoice: Promise.resolve({ outcome }),
++    get prevented() { return prevented; },
++    get prompted() { return prompted; },
++  };
++};
++
++test('Chromium: يخفي الزر حتى يصل beforeinstallprompt ثم يستدعي prompt()', async () => {
++  const { env, h } = fakeEnv();
++  const states: string[] = [];
++  const inst = createInstaller(env, (s) => states.push(s));
++  assert.equal(inst.state(), 'hidden');
++  const ev = bip();
++  h.beforeinstallprompt(ev as unknown as Event);
++  assert.equal(ev.prevented, true);
++  assert.equal(inst.state(), 'prompt');
++  assert.equal(await inst.install(), 'accepted');
++  assert.equal(ev.prompted, 1);
++  assert.equal(inst.state(), 'hidden');
++  assert.equal(await inst.install(), 'unavailable');
++});
++
++test('رفض التثبيت: يخفي الزر حتى يُطلق المتصفح الحدث من جديد', async () => {
++  const { env, h } = fakeEnv();
++  const inst = createInstaller(env, () => {});
++  h.beforeinstallprompt(bip('dismissed') as unknown as Event);
++  assert.equal(await inst.install(), 'dismissed');
++  assert.equal(inst.state(), 'hidden');
++  h.beforeinstallprompt(bip() as unknown as Event);
++  assert.equal(inst.state(), 'prompt');
++});
++
++test('appinstalled يخفي الزر', () => {
++  const { env, h } = fakeEnv();
++  const inst = createInstaller(env, () => {});
++  h.beforeinstallprompt(bip() as unknown as Event);
++  h.appinstalled({} as Event);
++  assert.equal(inst.state(), 'hidden');
++});
++
++test('iPhone: يظهر الزر ويعيد تعليمات Safari', async () => {
++  const { env } = fakeEnv({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari' });
++  const inst = createInstaller(env, () => {});
++  assert.equal(inst.state(), 'ios');
++  assert.equal(await inst.install(), 'ios-help');
++});
++
++test('iPadOS (يعرّف نفسه كـ Mac) يُكتشف بعدد نقاط اللمس', () => {
++  assert.equal(isIOS({ userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 5 }), true);
++  assert.equal(isIOS({ userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 0 }), false);
++});
++
++test('مثبّت أصلاً: لا زر (standalone و iOS standalone)', () => {
++  const a = fakeEnv({}, true);
++  assert.equal(isStandalone(a.env), true);
++  assert.equal(createInstaller(a.env, () => {}).state(), 'hidden');
++  const b = fakeEnv({ userAgent: 'iPhone', standalone: true });
++  assert.equal(createInstaller(b.env, () => {}).state(), 'hidden');
++});
++
++test('سطح المكتب بلا حدث: لا زر', () => {
++  assert.equal(createInstaller(fakeEnv().env, () => {}).state(), 'hidden');
++});
+diff --git a/vite.config.ts b/vite.config.ts
+index 07b20cb..385c809 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -8,7 +8,7 @@ export default defineConfig({
+   plugins: [
+     tailwindcss(),
+     VitePWA({
+-      registerType: 'autoUpdate',
++      registerType: 'prompt',
+       includeAssets: ['favicon.ico', 'favicon-32.png', 'apple-touch-icon.png', 'logo.png'],
+       manifest: {
+         id: 'nawy-note', // هوية مستقلة للتطبيق حين يشاركه الموقع منتجات أخرى
+-- 
+2.43.0
+
