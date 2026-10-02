@@ -20,7 +20,7 @@
       } catch (e) {}
     </script>
   </head>
-  <body class="min-h-screen bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
+  <body class="min-h-dvh overflow-x-hidden bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
     <script>
       // شريط أخطاء مرئي: يعمل حتى لو فشل تحميل شيفرة التطبيق نفسها
       (function () {
@@ -31,7 +31,7 @@
           b = document.createElement('div');
           b.id = 'fatal';
           b.setAttribute('role', 'alert');
-          b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:100;background:#b91c1c;color:#fff;padding:12px 16px;font:14px/1.7 Tahoma,system-ui,sans-serif;max-height:50vh;overflow:auto;direction:rtl';
+          b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:100;background:#b91c1c;color:#fff;padding:12px 16px;font:14px/1.7 Tahoma,system-ui,sans-serif;max-height:50dvh;overflow:auto;direction:rtl';
           b.innerHTML = '<strong>تعذّر تشغيل التطبيق بشكل سليم</strong><div id="fatalList"></div>';
           var x = document.createElement('button');
           x.textContent = 'إغلاق';
@@ -76,66 +76,79 @@
         }, 6000);
       })();
     </script>
-    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
-      <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-        <div class="flex shrink-0 items-center gap-2">
-          <img src="./logo.png" alt="" width="36" height="36" class="h-9 w-9 rounded-xl shadow-sm" />
-          <span class="hidden text-lg font-semibold tracking-tight sm:block">ناوي نوت</span>
+    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
+      <div class="safe-x mx-auto max-w-6xl">
+        <!-- الصف 1: الهوية + الإجراءات -->
+        <div class="flex items-center gap-1 pt-2">
+          <div class="flex min-w-0 flex-1 items-center gap-2">
+            <img src="./logo.png" alt="" width="36" height="36" class="h-9 w-9 shrink-0 rounded-xl shadow-sm" />
+            <span class="truncate text-lg font-semibold tracking-tight">ناوي نوت</span>
+          </div>
+          <button id="btnInstall" type="button" hidden class="btn-install" aria-label="تثبيت ناوي نوت" title="تثبيت ناوي نوت">
+            <span id="installIcon" aria-hidden="true"></span><span>تثبيت<span class="hidden sm:inline"> ناوي نوت</span></span>
+          </button>
+          <button id="btnBackup" type="button" class="btn-icon" title="نسخ احتياطي" aria-label="نسخ احتياطي"></button>
+          <button id="btnTheme" type="button" class="btn-icon" title="الوضع الليلي" aria-label="الوضع الليلي"></button>
         </div>
-        <div id="searchBox" class="relative mx-auto flex max-w-xl flex-1 items-center rounded-xl bg-slate-100 transition focus-within:ring-2 focus-within:ring-sky-400 dark:bg-slate-800">
+        <!-- الصف 2: البحث بعرض كامل -->
+        <div id="searchBox" class="relative mx-auto mt-1 flex h-11 max-w-xl items-center rounded-xl bg-slate-100 transition focus-within:ring-2 focus-within:ring-sky-400 dark:bg-slate-800">
           <span id="searchIcon" class="pointer-events-none ps-3 text-slate-400"></span>
-          <input id="search" type="search" autocomplete="off" placeholder="ابحث في ملاحظاتك..."
-            class="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-slate-400" />
-          <button id="btnSort" type="button" class="btn-icon !p-2" aria-haspopup="menu" aria-expanded="false"></button>
-          <button id="btnLayout" type="button" class="btn-icon !p-2 me-1"></button>
-          <div id="sortMenu" role="menu" class="modal-enter absolute end-0 top-full z-40 mt-2 hidden w-60 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"></div>
+          <input id="search" type="search" autocomplete="off" enterkeyhint="search" placeholder="ابحث في ملاحظاتك..."
+            class="h-full min-w-0 flex-1 bg-transparent px-3 text-base outline-none placeholder:text-slate-400" />
+          <button id="btnSort" type="button" class="btn-icon" aria-haspopup="menu" aria-expanded="false"></button>
+          <button id="btnLayout" type="button" class="btn-icon"></button>
+          <div id="sortMenu" role="menu" class="modal-enter absolute end-0 top-full z-40 mt-2 hidden w-64 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"></div>
         </div>
-        <div class="flex shrink-0 items-center gap-1">
-          <button id="btnBackup" class="btn-icon" title="نسخ احتياطي"></button>
-          <button id="btnTheme" class="btn-icon" title="الوضع الليلي"></button>
-        </div>
+        <!-- الصف 3: التبويبات (تمرير أفقي) -->
+        <nav id="tabs" class="no-scrollbar mx-auto flex max-w-xl gap-1 overflow-x-auto py-1 text-sm sm:justify-center" aria-label="العروض"></nav>
       </div>
-      <nav id="tabs" class="mx-auto flex max-w-6xl gap-1 px-4 pb-2 text-sm"></nav>
     </header>
 
-    <main class="mx-auto max-w-6xl px-4 py-6 pb-28">
-      <div id="trashBar" class="mx-auto mb-6 hidden max-w-xl items-center justify-between rounded-xl bg-slate-100 px-4 py-2.5 text-sm text-slate-500 dark:bg-slate-800">
+    <main class="safe-x main-pad mx-auto max-w-6xl pt-3 sm:pt-6">
+      <div id="trashBar" class="mx-auto mb-4 hidden max-w-xl items-center justify-between gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm text-slate-500 dark:bg-slate-800">
         <span>تُحذف الملاحظات نهائياً بعد 30 يوماً.</span>
-        <button id="btnEmptyTrash" class="font-medium text-red-500 hover:underline">إفراغ المهملات</button>
+        <button id="btnEmptyTrash" type="button" class="min-h-11 shrink-0 px-1 font-medium text-red-500">إفراغ المهملات</button>
       </div>
 
-      <section id="pinnedSection" class="mb-6 hidden">
-        <h3 class="mb-3 px-1 text-xs font-semibold tracking-wider text-slate-400">مثبتة</h3>
+      <section id="pinnedSection" class="mb-4 hidden">
+        <h3 class="mb-2 px-1 text-xs font-semibold tracking-wider text-slate-400">مثبتة</h3>
         <div id="pinnedGrid" class="notes-grid"></div>
       </section>
       <section>
-        <h3 id="othersTitle" class="mb-3 hidden px-1 text-xs font-semibold tracking-wider text-slate-400">أخرى</h3>
+        <h3 id="othersTitle" class="mb-2 hidden px-1 text-xs font-semibold tracking-wider text-slate-400">أخرى</h3>
         <div id="grid" class="notes-grid"></div>
       </section>
 
-      <div id="empty" class="hidden flex-col items-center py-20 text-center text-slate-400">
+      <div id="empty" class="hidden flex-col items-center py-16 text-center text-slate-400">
         <div id="emptyIcon" class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"></div>
         <p id="emptyText" class="text-base text-slate-500 dark:text-slate-400"></p>
       </div>
     </main>
 
     <!-- زر الإضافة العائم -->
-    <div id="fabRoot" class="fixed z-40" style="bottom:calc(1.5rem + env(safe-area-inset-bottom));inset-inline-end:1.5rem">
+    <div id="fabRoot" class="fixed z-40">
       <div id="fabBackdrop" class="fixed inset-0 hidden bg-white/60 backdrop-blur-[2px] dark:bg-black/50"></div>
       <div id="fabMenu" class="absolute bottom-[4.5rem] hidden flex-col-reverse items-end gap-3" style="inset-inline-end:0"></div>
       <button id="fab" type="button" aria-label="إضافة ملاحظة" aria-expanded="false"
-        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg transition hover:bg-sky-600 active:scale-95"></button>
+        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg transition active:scale-95"></button>
     </div>
 
-    <!-- المحرر -->
-    <div id="editor" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-0 backdrop-blur-sm sm:p-4" role="dialog" aria-modal="true">
-      <div id="editorCard" class="modal-enter flex h-full w-full flex-col overflow-hidden border border-slate-200 shadow-2xl dark:border-slate-800 sm:h-auto sm:max-h-[92vh] sm:max-w-xl sm:rounded-2xl">
-        <div id="editorBody" class="flex-1 overflow-y-auto p-5"></div>
-        <div id="editorFooter" class="relative flex items-center justify-between gap-2 border-t border-black/5 px-3 py-2.5 dark:border-white/10"></div>
+    <!-- شريط التحديث: لا نعيد التحميل أبداً وسط الكتابة، المستخدم يقرر -->
+    <div id="updateBar" role="status" hidden class="update-bar">
+      <span class="min-w-0 flex-1">يتوفر إصدار أحدث من ناوي نوت</span>
+      <button id="updateNow" type="button" class="btn-primary">حدّث الآن</button>
+      <button id="updateLater" type="button" class="btn-icon !text-white/80" aria-label="لاحقاً"></button>
+    </div>
+
+    <!-- المحرر: شاشة كاملة على الهاتف، نافذة وسطية على الشاشات الكبيرة -->
+    <div id="editor" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-0 backdrop-blur-sm sm:p-4" role="dialog" aria-modal="true" aria-label="محرر الملاحظة">
+      <div id="editorCard" class="modal-enter flex h-full w-full flex-col overflow-hidden border border-slate-200 shadow-2xl dark:border-slate-800 sm:h-auto sm:max-h-[92dvh] sm:max-w-xl sm:rounded-2xl">
+        <div id="editorBody" class="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5"></div>
+        <div id="editorFooter" class="relative flex items-center justify-between gap-1 border-t border-black/5 px-2 py-1.5 dark:border-white/10"></div>
       </div>
     </div>
 
-    <div id="toast" class="pointer-events-none fixed bottom-6 left-1/2 z-[60] -translate-x-1/2 rounded-xl bg-slate-800 px-5 py-2.5 text-sm text-white opacity-0 shadow-lg transition-opacity duration-300"></div>
+    <div id="toast" role="status" aria-live="polite" class="pointer-events-none fixed left-1/2 z-[60] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-slate-800 px-5 py-2.5 text-center text-sm text-white opacity-0 shadow-lg transition-opacity duration-300"></div>
     <input id="importFile" type="file" accept="application/json,.json" class="hidden" />
 
     <script type="module" src="/src/main.ts"></script>

@@ -12,36 +12,78 @@
 @layer base {
   * { -webkit-tap-highlight-color: transparent; }
   body { font-family: var(--font-sans); }
-  button { cursor: pointer; }
+  button { cursor: pointer; touch-action: manipulation; }
+  html { -webkit-text-size-adjust: 100%; }
+  /* 16px على الهاتف يمنع تكبير iOS التلقائي عند التركيز */
+  input, textarea { font-size: max(16px, 1em); }
+  @media (min-width: 640px) { input, textarea { font-size: inherit; } }
 }
 
 @layer components {
+  /* كل أهداف اللمس ≥ 44px */
   .btn-icon {
-    @apply rounded-xl p-2.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200;
+    @apply inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200;
   }
   .btn-icon.active { @apply text-sky-500; }
   .btn-primary {
-    @apply rounded-xl bg-sky-500 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-sky-600;
+    @apply min-h-11 rounded-xl bg-sky-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-sky-600;
   }
-  .menu-item { @apply flex w-full items-center gap-2 px-3 py-2 text-start text-sm hover:bg-slate-50 dark:hover:bg-slate-800; }
-  .tab { @apply rounded-lg px-3 py-1.5 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800; }
+  .menu-item { @apply flex min-h-11 w-full items-center gap-3 px-4 py-2 text-start text-sm hover:bg-slate-50 dark:hover:bg-slate-800; }
+  .tab { @apply inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-lg px-4 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800; }
   .tab[aria-current='page'] { @apply bg-sky-50 font-medium text-sky-600 dark:bg-sky-950 dark:text-sky-300; }
 }
 
+/* زر التثبيت */
+.btn-install {
+  display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding-inline: 0.875rem;
+  border-radius: 0.75rem; background: #0ea5e9; color: #fff; font-size: 0.875rem; font-weight: 500; white-space: nowrap;
+}
+.btn-install[hidden], .update-bar[hidden] { display: none !important; }
+.btn-install:active { transform: scale(0.97); }
+
+/* شريط التحديث */
+.update-bar {
+  position: fixed; z-index: 55; display: flex; align-items: center; gap: 0.5rem;
+  inset-inline: 0.75rem; bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  max-width: 28rem; margin-inline: auto; padding: 0.5rem 0.75rem; border-radius: 0.875rem;
+  background: #1e293b; color: #fff; font-size: 0.875rem; box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.3);
+}
+
+/* هوامش آمنة (notch / الحواف المنحنية) */
+.safe-x { padding-inline: max(0.75rem, env(safe-area-inset-left), env(safe-area-inset-right)); }
+@media (min-width: 640px) { .safe-x { padding-inline: max(1rem, env(safe-area-inset-left), env(safe-area-inset-right)); } }
+.main-pad { padding-bottom: calc(6.5rem + env(safe-area-inset-bottom)); }
+#fabRoot { bottom: calc(1rem + env(safe-area-inset-bottom)); inset-inline-end: max(1rem, env(safe-area-inset-left)); }
+#toast { bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* المحرر: ارتفاع ديناميكي + حدود آمنة؛ لوحة المفاتيح تُدار عبر visualViewport (editor.ts) */
+#editor { height: 100dvh; }
+@media (max-width: 639.98px) {
+  #editorCard { padding-top: env(safe-area-inset-top); padding-inline: env(safe-area-inset-left) env(safe-area-inset-right); border-width: 0; }
+  #editorFooter { padding-bottom: max(0.375rem, env(safe-area-inset-bottom)); }
+  #editor.kb-open #editorCard { padding-top: 0; }
+  #editor.kb-open #editorFooter { padding-bottom: 0.375rem; }
+}
+
 /* تخطيط متدرّج (masonry) بترتيب قراءة صفّي: صفوف 4px وكل بطاقة تمتد على عدد منها (يحسبه main.ts) */
-.notes-grid { display: grid; column-gap: 1rem; row-gap: 0; grid-auto-rows: 4px; align-items: start; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 640px) { .notes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.notes-grid { --gap: 0.625rem; display: grid; column-gap: var(--gap); row-gap: 0; grid-auto-rows: 4px; align-items: start; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 640px) { .notes-grid { --gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .notes-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 1280px) { .notes-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 /* عرض الصفوف (قائمة) */
-html[data-layout='list'] .notes-grid { grid-template-columns: minmax(0, 1fr); max-width: 42rem; margin-inline: auto; }
+html[data-layout='list'] .notes-grid { --gap: 0.625rem; grid-template-columns: minmax(0, 1fr); max-width: 42rem; margin-inline: auto; }
 
 .note-card {
   -webkit-touch-callout: none;
   box-shadow: var(--shadow-card);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.note-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+@media (hover: hover) and (pointer: fine) {
+  .note-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+}
+.note-card { overflow-wrap: anywhere; }
 
 /* ألوان الملاحظات: متغيّر واحد لكل لون يتبدّل مع الوضع الداكن */
 :root {

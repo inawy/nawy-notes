@@ -11,6 +11,7 @@ import { icon } from './lib/icons';
 import { drawingPreviewSvg } from './lib/draw';
 import { toast } from './lib/toast';
 import { appReady, dbMessage, reportError } from './lib/report';
+import { createInstaller, IOS_HELP, type InstallState } from './pwa/install';
 import { closeEditor, flushEditor, isEditorOpen, openEditor, setOnSaved } from './editor';
 
 let view: View = 'notes';
@@ -27,6 +28,8 @@ const VIEW_LABEL: Record<View, string> = { notes: 'الملاحظات', archive:
 function mountChrome() {
   $('#searchIcon').innerHTML = icon('search');
   $('#btnBackup').innerHTML = icon('download');
+  $('#installIcon').innerHTML = icon('phone', 'w-5 h-5');
+  $('#updateLater').innerHTML = icon('x', 'w-5 h-5');
   mountFab();
   syncToolbar();
   $('#emptyIcon').innerHTML = icon('notes', 'w-10 h-10');
@@ -155,8 +158,8 @@ function cardHTML(n: Note): string {
 
   const actions = trash
     ? `<div class="mt-3 flex gap-2 border-t border-black/5 pt-2 dark:border-white/10">
-         <button type="button" data-act="restore" class="flex items-center gap-1 text-xs font-medium text-sky-600 dark:text-sky-300">${icon('restore', 'w-4 h-4')} استعادة</button>
-         <button type="button" data-act="purge" class="mr-auto flex items-center gap-1 text-xs font-medium text-red-500">${icon('trash', 'w-4 h-4')} حذف نهائي</button>
+         <button type="button" data-act="restore" class="flex min-h-11 items-center gap-1 px-1 text-xs font-medium text-sky-600 dark:text-sky-300">${icon('restore', 'w-4 h-4')} استعادة</button>
+         <button type="button" data-act="purge" class="ms-auto flex min-h-11 items-center gap-1 px-1 text-xs font-medium text-red-500">${icon('trash', 'w-4 h-4')} حذف نهائي</button>
        </div>`
     : '';
 
@@ -168,7 +171,7 @@ function cardHTML(n: Note): string {
     actions;
 
   return `<article class="note-card nc-${n.color} cursor-pointer overflow-hidden rounded-2xl border border-black/5 dark:border-white/5" data-id="${n.id}" ${trash ? '' : 'tabindex="0"'}>
-    ${cover}${inner ? `<div class="p-4 ${cover ? 'pt-3' : ''}">${inner}</div>` : ''}
+    ${cover}${inner ? `<div class="p-3 sm:p-4 ${cover ? 'pt-3' : ''}">${inner}</div>` : ''}
   </article>`;
 }
 
@@ -207,11 +210,11 @@ function render(notes: Note[]) {
 
 // ---------- تخطيط متدرّج ----------
 const ROW = 4; // يطابق grid-auto-rows في CSS
-const GAP = 16; // المسافة الرأسية بين البطاقات
 const ro = new ResizeObserver((entries) => entries.forEach((e) => setSpan(e.target as HTMLElement)));
 
 function setSpan(el: HTMLElement) {
-  el.style.gridRowEnd = `span ${Math.max(1, Math.ceil((el.offsetHeight + GAP) / ROW))}`;
+  const gap = parseFloat(getComputedStyle(el.parentElement ?? el).columnGap) || 16; // الرأسية = الأفقية
+  el.style.gridRowEnd = `span ${Math.max(1, Math.ceil((el.offsetHeight + gap) / ROW))}`;
 }
 
 function layoutMasonry() {
@@ -492,10 +495,28 @@ wire();
 subscribe();
 void purgeOldTrash();
 
-registerSW({
+// ---------- تثبيت التطبيق (PWA) ----------
+const installer = createInstaller(window, (st: InstallState) => {
+  $('#btnInstall').hidden = st === 'hidden';
+});
+installer.refresh();
+$('#btnInstall').onclick = async () => {
+  const r = await installer.install();
+  if (r === 'ios-help') toast(IOS_HELP);
+  else if (r === 'accepted') toast('جارٍ تثبيت ناوي نوت…');
+};
+
+// ---------- التحديث: لا نعيد التحميل وسط الكتابة، المستخدم يقرر ----------
+const updateSW = registerSW({
   immediate: true,
+  onNeedRefresh: () => ($('#updateBar').hidden = false),
   onOfflineReady: () => toast('جاهز للعمل بدون إنترنت'),
 });
+$('#updateNow').onclick = async () => {
+  await flushEditor(); // لا يضيع شيء مما يُكتب
+  await updateSW(true);
+};
+$('#updateLater').onclick = () => (($('#updateBar').hidden = true));
 
 // تخزين دائم: يمنع المتصفح من مسح البيانات تحت ضغط المساحة
 void navigator.storage?.persist?.();

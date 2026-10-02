@@ -53,6 +53,55 @@ function touch() {
   save();
 }
 
+
+// ---------- تجربة الهاتف: لوحة المفاتيح وزر الرجوع ----------
+/** يحافظ على المحرر داخل المساحة المرئية فوق لوحة المفاتيح (iOS لا يغيّر الـ layout viewport). */
+function fitViewport() {
+  const vv = window.visualViewport;
+  const el = document.getElementById('editor');
+  if (!vv || !el) return;
+  const kb = window.innerHeight - vv.height - vv.offsetTop > 80 || vv.height < window.innerHeight - 120;
+  el.classList.toggle('kb-open', kb);
+  if (kb) {
+    el.style.top = `${vv.offsetTop}px`;
+    el.style.height = `${vv.height}px`;
+    el.style.bottom = 'auto';
+  } else {
+    el.style.top = el.style.height = el.style.bottom = '';
+  }
+}
+function trackViewport(on: boolean) {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  vv[on ? 'addEventListener' : 'removeEventListener']('resize', fitViewport);
+  vv[on ? 'addEventListener' : 'removeEventListener']('scroll', fitViewport);
+  const el = document.getElementById('editor');
+  if (!on && el) {
+    el.classList.remove('kb-open');
+    el.style.top = el.style.height = el.style.bottom = '';
+  } else fitViewport();
+}
+
+/** زر/إيماءة الرجوع في الهاتف يغلق المحرر بدل مغادرة التطبيق. */
+let histPushed = false;
+function pushHist() {
+  try {
+    history.pushState({ nawyNote: 'editor' }, '');
+    histPushed = true;
+  } catch { /* بيئة بلا history: نتجاهل */ }
+}
+function popHist() {
+  if (!histPushed) return;
+  histPushed = false;
+  try { history.back(); } catch { /* ignore */ }
+}
+window.addEventListener('popstate', () => {
+  if (histPushed) {
+    histPushed = false; // المتصفح رجع بالفعل
+    void closeEditor();
+  }
+});
+
 export function isEditorOpen(): boolean {
   return current !== null;
 }
@@ -78,6 +127,8 @@ export function openEditor(note: Note, isNew: boolean, initial?: InitialAction):
   el.classList.remove('hidden');
   el.classList.add('flex');
   document.body.classList.add('overflow-hidden');
+  trackViewport(true);
+  pushHist();
   el.onclick = (e) => {
     if (e.target === el) void closeEditor();
   };
@@ -124,11 +175,13 @@ export async function closeEditor(): Promise<void> {
   el.classList.add('hidden');
   el.classList.remove('flex');
   document.body.classList.remove('overflow-hidden');
+  trackViewport(false);
+  popHist();
 }
 
 function applyColor(n: Note) {
   $('#editorCard').className =
-    `modal-enter relative flex h-full w-full flex-col overflow-hidden border border-black/5 shadow-2xl dark:border-white/10 sm:h-auto sm:max-h-[92vh] sm:max-w-xl sm:rounded-2xl nc-${n.color}`;
+    `modal-enter relative flex h-full w-full flex-col overflow-hidden border border-black/5 shadow-2xl dark:border-white/10 sm:h-auto sm:max-h-[92dvh] sm:max-w-xl sm:rounded-2xl nc-${n.color}`;
 }
 
 function renderAll() {
@@ -163,7 +216,7 @@ function renderNote(n: Note) {
 // ---------- نص ----------
 function renderText(n: Note, root: HTMLElement) {
   root.innerHTML = `<textarea id="eText" rows="8" placeholder="اكتب ملاحظتك..."
-    class="w-full resize-none bg-transparent text-[15px] leading-relaxed outline-none placeholder:text-slate-400">${esc(n.body)}</textarea>`;
+    class="w-full resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-slate-400">${esc(n.body)}</textarea>`;
   const ta = $<HTMLTextAreaElement>('#eText', root);
   const fit = () => {
     ta.style.height = 'auto';
@@ -184,7 +237,7 @@ function renderList(n: Note, root: HTMLElement) {
       <input type="checkbox" class="h-4.5 w-4.5 shrink-0 accent-sky-500" ${it.done ? 'checked' : ''} aria-label="تم" />
       <input type="text" value="${esc(it.text)}" placeholder="عنصر"
         class="min-w-0 flex-1 bg-transparent py-1 text-[15px] outline-none placeholder:text-slate-400 ${it.done ? 'line-through opacity-50' : ''}" />
-      <button type="button" class="rm btn-icon !p-1" aria-label="حذف العنصر">${icon('x', 'w-4 h-4')}</button>
+      <button type="button" class="rm btn-icon" aria-label="حذف العنصر">${icon('x', 'w-4 h-4')}</button>
     </div>`;
   const draw = () => {
     root.innerHTML = `<div class="space-y-1" id="rows">${n.items.map(row).join('')}</div>
@@ -283,7 +336,7 @@ function renderMedia() {
     html += `<div class="grid gap-2 ${imgs.length > 1 ? 'grid-cols-2' : ''}">${imgs
       .map(
         (a) => `<div class="relative overflow-hidden rounded-xl">
-          <img src="${blobUrl(a.blob!)}" alt="صورة مرفقة" class="max-h-[50vh] w-full object-cover" />${rmBtn(a.id)}</div>`,
+          <img src="${blobUrl(a.blob!)}" alt="صورة مرفقة" class="max-h-[50dvh] w-full object-cover" />${rmBtn(a.id)}</div>`,
       )
       .join('')}</div>`;
   }
@@ -293,7 +346,7 @@ function renderMedia() {
   }
   for (const a of audios) {
     html += `<div class="flex items-center gap-2">
-      <audio controls preload="metadata" src="${blobUrl(a.blob!)}" class="h-10 min-w-0 flex-1"></audio>${rmBtn(a.id, 'btn-icon !p-1.5')}</div>`;
+      <audio controls preload="metadata" src="${blobUrl(a.blob!)}" class="h-10 min-w-0 flex-1"></audio>${rmBtn(a.id, 'btn-icon')}</div>`;
   }
   if (recorder) {
     html += `<div class="flex items-center gap-3 rounded-xl bg-red-500/10 px-3 py-2">
@@ -418,8 +471,7 @@ function renderDrawMode(n: Note) {
   }
   const d = att.drawing;
   const swatch = (c: string) =>
-    `<button type="button" data-color="${c}" class="pen-color h-6 w-6 rounded-full border-2 border-transparent"
-      style="background:${c === 'ink' ? 'currentColor' : c}" aria-label="لون القلم"></button>`;
+    `<button type="button" data-color="${c}" class="pen-color flex h-11 w-11 items-center justify-center" aria-label="لون القلم"><span class="block h-6 w-6 rounded-full border border-black/20" style="background:${c === 'ink' ? 'currentColor' : c}"></span></button>`;
 
   $('#editorFooter').style.display = 'none';
   const root = $('#editorBody');
@@ -428,16 +480,16 @@ function renderDrawMode(n: Note) {
       <span class="text-sm font-medium">رسم</span>
       <button type="button" id="dDone" class="btn-primary">تم</button>
     </div>
-    <div class="mb-2 flex flex-wrap items-center gap-1">
-      <button type="button" data-tool="pen" class="tool btn-icon !p-2" title="قلم">${icon('pencil')}</button>
-      <button type="button" data-tool="eraser" class="tool btn-icon !p-2 text-xs font-medium" title="ممحاة">ممحاة</button>
+    <div class="mb-2 flex flex-wrap items-center">
+      <button type="button" data-tool="pen" class="tool btn-icon" title="قلم">${icon('pencil')}</button>
+      <button type="button" data-tool="eraser" class="tool btn-icon text-xs font-medium" title="ممحاة">ممحاة</button>
       <span class="mx-1 h-5 w-px bg-black/10 dark:bg-white/20"></span>
       ${PEN_COLORS.map(swatch).join('')}
       <span class="mx-1 h-5 w-px bg-black/10 dark:bg-white/20"></span>
-      ${PEN_SIZES.map((s) => `<button type="button" data-size="${s}" class="pen-size flex h-8 w-8 items-center justify-center rounded-lg" aria-label="حجم القلم"><span class="rounded-full bg-current" style="width:${s + 2}px;height:${s + 2}px"></span></button>`).join('')}
+      ${PEN_SIZES.map((s) => `<button type="button" data-size="${s}" class="pen-size flex h-11 w-11 items-center justify-center rounded-lg" aria-label="حجم القلم"><span class="rounded-full bg-current" style="width:${s + 2}px;height:${s + 2}px"></span></button>`).join('')}
       <span class="flex-1"></span>
-      <button type="button" id="dUndo" class="btn-icon !p-2" title="تراجع">${icon('undo')}</button>
-      <button type="button" id="dClear" class="btn-icon !p-2" title="مسح الكل">${icon('trash')}</button>
+      <button type="button" id="dUndo" class="btn-icon" title="تراجع">${icon('undo')}</button>
+      <button type="button" id="dClear" class="btn-icon" title="مسح الكل">${icon('trash')}</button>
     </div>
     <div class="draw-surface overflow-hidden border border-black/10 dark:border-white/10">
       <canvas id="dCanvas" class="block h-auto w-full text-slate-900 dark:text-slate-100" style="aspect-ratio:${d.width}/${d.height}" dir="ltr"></canvas>
@@ -453,9 +505,10 @@ function renderDrawMode(n: Note) {
     root.querySelectorAll<HTMLElement>('.tool').forEach((t) => t.classList.toggle('active', t.dataset.tool === b.tool));
     root.querySelectorAll<HTMLElement>('.pen-color').forEach((t) => {
       const on = t.dataset.color === b.color && b.tool === 'pen';
-      t.classList.toggle('ring-2', on);
-      t.classList.toggle('ring-sky-500', on);
-      t.classList.toggle('ring-offset-1', on);
+      const dot = t.firstElementChild as HTMLElement;
+      dot.classList.toggle('ring-2', on);
+      dot.classList.toggle('ring-sky-500', on);
+      dot.classList.toggle('ring-offset-1', on);
     });
     root.querySelectorAll<HTMLElement>('.pen-size').forEach((t) =>
       t.classList.toggle('bg-black/10', Number(t.dataset.size) === b.size),
@@ -495,29 +548,29 @@ function renderFooter() {
   const f = $('#editorFooter');
   f.style.display = '';
 
-  const addMenu = `<div id="ePop" role="menu" class="absolute bottom-full start-3 z-10 mb-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-slate-800 shadow-lg dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+  const addMenu = `<div id="ePop" role="menu" class="absolute bottom-full start-2 z-10 mb-2 w-64 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-slate-800 shadow-lg dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
       <button type="button" role="menuitem" data-add="image" class="menu-item">${icon('image')} صورة</button>
       <button type="button" role="menuitem" data-add="audio" class="menu-item">${icon('mic')} تسجيل صوتي</button>
       <button type="button" role="menuitem" data-add="draw" class="menu-item">${icon('pencil')} رسم</button>
       <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
       <button type="button" role="menuitem" data-add="list" class="menu-item">${icon('list')} ${n.type === 'list' ? 'إخفاء خانات الاختيار' : 'إظهار خانات الاختيار'}</button>
     </div>`;
-  const colorMenu = `<div id="ePop" class="absolute bottom-full start-3 z-10 mb-2 flex w-[13.5rem] flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+  const colorMenu = `<div id="ePop" class="absolute bottom-full start-2 z-10 mb-2 flex w-[15.5rem] max-w-[calc(100vw-1.5rem)] flex-wrap rounded-xl border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
       ${COLOR_IDS.map(
         (c) => `<button type="button" data-color="${c}" title="${COLOR_LABELS[c]}" aria-label="${COLOR_LABELS[c]}"
-          class="h-7 w-7 rounded-full border-2 nc-${c} ${n.color === c ? 'border-slate-700 dark:border-white' : 'border-black/10 dark:border-white/20'}"></button>`,
+          class="flex h-11 w-11 items-center justify-center"><span class="block h-8 w-8 rounded-full border-2 nc-${c} ${n.color === c ? 'border-slate-700 dark:border-white' : 'border-black/10 dark:border-white/20'}"></span></button>`,
       ).join('')}</div>`;
 
   f.innerHTML = `
     <div class="flex items-center gap-1">
-      <button type="button" id="eAdd" class="btn-icon !p-2 ${pop === 'add' ? 'active' : ''}" title="إضافة" aria-label="إضافة" aria-haspopup="menu" aria-expanded="${pop === 'add'}">${icon('plus')}</button>
-      <button type="button" id="ePalette" class="btn-icon !p-2 ${pop === 'color' ? 'active' : ''}" title="اللون" aria-label="اللون">${icon('palette')}</button>
+      <button type="button" id="eAdd" class="btn-icon ${pop === 'add' ? 'active' : ''}" title="إضافة" aria-label="إضافة" aria-haspopup="menu" aria-expanded="${pop === 'add'}">${icon('plus')}</button>
+      <button type="button" id="ePalette" class="btn-icon ${pop === 'color' ? 'active' : ''}" title="اللون" aria-label="اللون">${icon('palette')}</button>
     </div>
     <div class="flex items-center gap-1">
-      <button type="button" id="ePin" class="btn-icon !p-2 ${n.pinned ? 'active' : ''}" title="تثبيت" aria-label="تثبيت">${icon('pin')}</button>
-      <button type="button" id="eArchive" class="btn-icon !p-2" title="${n.status === 'archived' ? 'إلغاء الأرشفة' : 'أرشفة'}" aria-label="أرشفة">${icon('archive')}</button>
-      <button type="button" id="eTrash" class="btn-icon !p-2 hover:!text-red-500" title="نقل للمهملات" aria-label="نقل للمهملات">${icon('trash')}</button>
-      <button type="button" id="eDone" class="btn-primary mr-1">تم</button>
+      <button type="button" id="ePin" class="btn-icon ${n.pinned ? 'active' : ''}" title="تثبيت" aria-label="تثبيت">${icon('pin')}</button>
+      <button type="button" id="eArchive" class="btn-icon" title="${n.status === 'archived' ? 'إلغاء الأرشفة' : 'أرشفة'}" aria-label="أرشفة">${icon('archive')}</button>
+      <button type="button" id="eTrash" class="btn-icon hover:!text-red-500" title="نقل للمهملات" aria-label="نقل للمهملات">${icon('trash')}</button>
+      <button type="button" id="eDone" class="btn-primary ms-1">تم</button>
     </div>
     ${pop === 'add' ? addMenu : pop === 'color' ? colorMenu : ''}`;
 
