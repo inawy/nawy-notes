@@ -102,7 +102,7 @@ function toggleSortMenu(open?: boolean) {
 function syncTheme() {
   const dark = document.documentElement.classList.contains('dark');
   $('#btnTheme').innerHTML = icon(dark ? 'sun' : 'moon');
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#0f172a' : '#0ea5e9');
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#0f172a' : '#ffffff'); // لون الهيدر، فيمتزج شريط الحالة معه
 }
 
 // ---------- البطاقات ----------
@@ -201,8 +201,10 @@ function render(notes: Note[]) {
   $('#trashBar').classList.toggle('hidden', !showTrashBar);
   $('#trashBar').classList.toggle('flex', showTrashBar);
   document.querySelectorAll<HTMLElement>('#tabs .tab').forEach((t) => {
-    if (t.dataset.view === view) t.setAttribute('aria-current', 'page');
-    else t.removeAttribute('aria-current');
+    if (t.dataset.view === view) {
+      t.setAttribute('aria-current', 'page');
+      t.scrollIntoView?.({ inline: 'nearest', block: 'nearest' });
+    } else t.removeAttribute('aria-current');
   });
   layoutMasonry();
   mountSortables();
@@ -340,6 +342,8 @@ function create(type: FabAction) {
   else openEditor(newNote('text'), true, type);
 }
 
+const VIEW_ORDER: View[] = ['notes', 'archive', 'trash'];
+
 function setView(v: View) {
   view = v;
   if (v !== 'notes') $<HTMLInputElement>('#search').value = '';
@@ -390,6 +394,24 @@ function wire() {
     const t = (e.target as HTMLElement).closest<HTMLElement>('[data-type]')?.dataset.type as FabAction | undefined;
     if (t) create(t);
   };
+
+  // سحب أفقي للتنقل بين التبويبات (RTL: السحب نحو اليمين = التبويب التالي)
+  let sx = 0, sy = 0, st = 0, tracking = false;
+  const main = document.querySelector('main')!;
+  main.addEventListener('touchstart', (e) => {
+    tracking = e.touches.length === 1 && !isEditorOpen() && !document.querySelector('.drag-chosen');
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
+  }, { passive: true });
+  main.addEventListener('touchend', (e) => {
+    if (!tracking) return;
+    tracking = false;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.6 || Date.now() - st > 700) return;
+    if (document.querySelector('.drag-chosen')) return;
+    const i = VIEW_ORDER.indexOf(view) + (dx > 0 ? 1 : -1);
+    if (i >= 0 && i < VIEW_ORDER.length) setView(VIEW_ORDER[i]);
+  }, { passive: true });
 
   $('#tabs').onclick = (e) => {
     const v = (e.target as HTMLElement).closest<HTMLElement>('[data-view]')?.dataset.view as View | undefined;
