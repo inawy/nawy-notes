@@ -4,7 +4,7 @@ import { $, debounce, esc, uid } from './lib/util';
 import { icon } from './lib/icons';
 import { DrawingBoard, PEN_COLORS, PEN_SIZES, drawingPreviewSvg } from './lib/draw';
 import { VoiceRecorder, pickFile, resizeImage } from './lib/media';
-import { showMicHelp } from './lib/permission';
+import { micState, needsMicIntro, showMicHelp, showMicIntro } from './lib/permission';
 import { toast } from './lib/toast';
 
 /** إجراء يُنفَّذ فور فتح ملاحظة جديدة (من الزر العائم). */
@@ -406,15 +406,33 @@ async function addDeviceRecording(capture: boolean) {
   renderMedia();
 }
 
-async function startRecording() {
+function micHelp() {
+  showMicHelp(() => void startRecording(), (capture) => void addDeviceRecording(capture)); // يبقى المحرر مفتوحاً
+}
+
+async function startRecording(skipIntro = false) {
   if (recorder || !current) return;
+  if (!skipIntro) {
+    const st = await micState();
+    if (!current) return;
+    if (st === 'denied') return micHelp(); // لا فائدة من الطلب: المتصفح سيرفضه فوراً
+    if (needsMicIntro(st)) {
+      showMicIntro(
+        () => void startRecording(true),
+        () => {
+          if (current && isEmptyNote(current)) void closeEditor();
+        },
+      );
+      return;
+    }
+  }
   const r = new VoiceRecorder();
   try {
     await r.start();
   } catch (err) {
     const denied = err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
     if (denied) {
-      showMicHelp(() => void startRecording(), (capture) => void addDeviceRecording(capture)); // يبقى المحرر مفتوحاً ليعيد المستخدم المحاولة
+      micHelp();
       return;
     }
     toast(err instanceof Error ? err.message : 'تعذّر بدء التسجيل');

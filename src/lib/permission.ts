@@ -70,3 +70,61 @@ export function showMicHelp(onRetry: () => void, onDeviceRecorder?: (capture: bo
     };
   }).catch(() => { /* المتصفح لا يدعم استعلام الإذن: يبقى زر إعادة المحاولة */ });
 }
+
+export type MicState = 'granted' | 'prompt' | 'denied' | 'unknown';
+
+/** حالة إذن الميكروفون دون طلبه (Safari لا يدعم الاستعلام فيعيد unknown). */
+export async function micState(): Promise<MicState> {
+  try {
+    const st = await navigator.permissions?.query({ name: 'microphone' as PermissionName });
+    return st ? st.state : 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+const INTRO_KEY = 'nawy-note:mic-intro';
+
+/** هل نعرض الشرح قبل الطلب؟ عند "prompt" دائماً، وعند "unknown" مرة واحدة فقط. */
+export function needsMicIntro(st: MicState): boolean {
+  if (st === 'prompt') return true;
+  if (st !== 'unknown') return false;
+  try {
+    if (localStorage.getItem(INTRO_KEY)) return false;
+    localStorage.setItem(INTRO_KEY, '1');
+  } catch { /* التخزين محجوب: نعرضه */ }
+  return true;
+}
+
+/** شرح قصير قبل أول طلب إذن، حتى لا يضغط المستخدم «رفض» أو يغلق النافذة بالخطأ. */
+export function showMicIntro(onGo: () => void, onCancel: () => void): void {
+  document.getElementById('micIntro')?.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'micIntro';
+  wrap.className = 'fixed inset-0 z-[70] flex items-end justify-center bg-black/40 sm:items-center';
+  wrap.setAttribute('role', 'dialog');
+  wrap.setAttribute('aria-modal', 'true');
+  wrap.innerHTML = `
+    <div class="modal-enter w-full max-w-md rounded-t-2xl bg-white p-5 text-slate-800 shadow-2xl dark:bg-slate-900 dark:text-slate-100 sm:rounded-2xl" style="padding-bottom:max(1.25rem,env(safe-area-inset-bottom))">
+      <h2 class="mb-2 text-lg font-semibold">التسجيل الصوتي يحتاج الميكروفون</h2>
+      <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">سيظهر الآن طلب من المتصفح. اضغط <strong class="text-slate-800 dark:text-slate-100">«سماح»</strong> (أو «أثناء استخدام التطبيق»). يبقى التسجيل على جهازك فقط.</p>
+      <div class="flex gap-2">
+        <button type="button" id="introGo" class="btn-primary flex-1">متابعة</button>
+        <button type="button" id="introCancel" class="btn-icon flex-1 !text-slate-600 dark:!text-slate-300">إلغاء</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const cancel = () => {
+    wrap.remove();
+    onCancel();
+  };
+  wrap.onclick = (e) => {
+    if (e.target === wrap) cancel();
+  };
+  wrap.querySelector<HTMLElement>('#introCancel')!.onclick = cancel;
+  wrap.querySelector<HTMLElement>('#introGo')!.onclick = () => {
+    wrap.remove();
+    onGo(); // داخل نقرة المستخدم: شرط ظهور نافذة الإذن
+  };
+  wrap.querySelector<HTMLElement>('#introGo')!.focus();
+}
