@@ -120,9 +120,11 @@ html[data-layout='list'] .notes-grid { --gap: 0.625rem; grid-template-columns: m
 @keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
 @media (min-width: 640px) { .sheet-enter { animation: pop 0.2s var(--ease-out); } }
 @media (max-width: 639.98px) { #editorCard.modal-enter { animation: sheetUp 0.3s var(--ease-out); } }
-/* تبديل التبويبات: المحتوى ينزلق قليلاً من جهة التبويب الجديد */
-.view-enter { animation: viewIn 0.24s var(--ease-out); }
-@keyframes viewIn { from { opacity: 0; transform: translateX(var(--dx, 0)); } to { opacity: 1; transform: none; } }
+/* تبديل التبويبات: ظهور هادئ بلا إزاحة أفقية (الإزاحة الأفقية كانت تهزّ الصفحة) */
+html, body { overscroll-behavior-x: none; }
+main { touch-action: pan-y; }
+.view-enter { animation: viewIn 0.2s var(--ease-out); }
+@keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 /* عناصر قائمة الإضافة تظهر متتابعة */
 #fabMenu > button { animation: fabItem 0.22s var(--ease-out) both; }
 #fabMenu > button:nth-last-child(1) { animation-delay: 0ms; }

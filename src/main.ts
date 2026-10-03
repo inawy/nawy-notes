@@ -208,6 +208,14 @@ function render(notes: Note[]) {
   });
   layoutMasonry();
   mountSortables();
+  if (enterPending) {
+    enterPending = false;
+    window.scrollTo(0, 0); // العرض الجديد يبدأ من أعلاه بدل قفزة في موضع التمرير
+    const m = document.querySelector('main')!;
+    m.classList.remove('view-enter');
+    void m.offsetWidth;
+    m.classList.add('view-enter');
+  }
 }
 
 // ---------- تخطيط متدرّج ----------
@@ -343,16 +351,10 @@ function create(type: FabAction) {
 }
 
 const VIEW_ORDER: View[] = ['notes', 'archive', 'trash'];
+let enterPending = false;
 
 function setView(v: View) {
-  const dir = VIEW_ORDER.indexOf(v) - VIEW_ORDER.indexOf(view);
-  if (dir !== 0) {
-    const m = document.querySelector('main')!;
-    m.style.setProperty('--dx', `${dir > 0 ? -28 : 28}px`); // RTL: التالي يدخل من اليسار
-    m.classList.remove('view-enter');
-    void m.offsetWidth; // يعيد تشغيل الحركة
-    m.classList.add('view-enter');
-  }
+  if (v !== view) enterPending = true; // الحركة تُشغَّل عند وصول محتوى العرض الجديد، لا قبله
   view = v;
   if (v !== 'notes') $<HTMLInputElement>('#search').value = '';
   query = '';
