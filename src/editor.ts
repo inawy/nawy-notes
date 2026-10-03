@@ -399,8 +399,8 @@ async function addImage(fromInit = false) {
 
 // ---------- تسجيل صوتي ----------
 /** بديل بلا إذن ميكروفون: مسجّل الجهاز نفسه (أو اختيار ملف صوتي). */
-async function addDeviceRecording() {
-  const file = await pickFile('audio/*', true);
+async function addDeviceRecording(capture: boolean) {
+  const file = await pickFile('audio/*', capture);
   if (!file || !current) return;
   addAttachment({ id: uid(), kind: 'audio', blob: file, drawing: null });
   renderMedia();
@@ -414,7 +414,7 @@ async function startRecording() {
   } catch (err) {
     const denied = err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
     if (denied) {
-      showMicHelp(() => void startRecording(), () => void addDeviceRecording()); // يبقى المحرر مفتوحاً ليعيد المستخدم المحاولة
+      showMicHelp(() => void startRecording(), (capture) => void addDeviceRecording(capture)); // يبقى المحرر مفتوحاً ليعيد المستخدم المحاولة
       return;
     }
     toast(err instanceof Error ? err.message : 'تعذّر بدء التسجيل');
