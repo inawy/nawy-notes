@@ -182,7 +182,7 @@ export async function closeEditor(): Promise<void> {
 
 function applyColor(n: Note) {
   $('#editorCard').className =
-    `modal-enter relative flex h-full w-full flex-col overflow-hidden border border-black/5 shadow-2xl dark:border-white/10 sm:h-auto sm:max-h-[92dvh] sm:max-w-xl sm:rounded-2xl nc-${n.color}`;
+    `modal-enter relative flex h-full w-full flex-col overflow-hidden border border-black/5 shadow-2xl dark:border-white/10 ${drawingId ? 'sm:h-[92dvh]' : 'sm:h-auto'} sm:max-h-[92dvh] sm:max-w-xl sm:rounded-2xl nc-${n.color}`;
 }
 
 function renderAll() {
@@ -198,6 +198,7 @@ function renderAll() {
 // ============================================================
 function renderNote(n: Note) {
   $('#editorBody').onclick = null; // معالج وضع الرسم لا يجب أن يبقى بعد الخروج منه
+  $('#editorBody').className = 'flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5';
   $('#editorBody').innerHTML = `
     <div id="eMedia"></div>
     <input id="eTitle" type="text" value="${esc(n.title)}" placeholder="العنوان"
@@ -493,7 +494,12 @@ function startDrawing(id?: string) {
   if (!n) return;
   let att = id ? n.attachments.find((a) => a.id === id) : undefined;
   if (!att) {
-    att = { id: uid(), kind: 'draw', blob: null, drawing: { width: 800, height: 600, strokes: [] } };
+    // مساحة الرسم الجديد بنسبة المساحة المتاحة في الشاشة (طولية على الهاتف) لتملأها تقريباً
+    const big = window.innerWidth >= 640; // نافذة وسطية: 92% من الارتفاع وعرض أقصى 576px
+    const availW = Math.min(window.innerWidth, 576) - 24;
+    const availH = (big ? 0.92 : 1) * window.innerHeight - 150; // ناقص الشريط العلوي وأدوات الرسم
+    const ratio = Math.min(1.8, Math.max(0.75, availH / availW));
+    att = { id: uid(), kind: 'draw', blob: null, drawing: { width: 900, height: Math.round(900 * ratio), strokes: [] } };
     n.attachments.push(att);
   }
   drawingId = att.id;
@@ -525,12 +531,13 @@ function renderDrawMode(n: Note) {
 
   $('#editorFooter').style.display = 'none';
   const root = $('#editorBody');
+  root.className = 'flex min-h-0 flex-1 flex-col overflow-hidden p-3';
   root.innerHTML = `
-    <div class="mb-2 flex items-center justify-between">
+    <div class="mb-1 flex shrink-0 items-center justify-between">
       <span class="text-sm font-medium">رسم</span>
       <button type="button" id="dDone" class="btn-primary">تم</button>
     </div>
-    <div class="mb-2 flex flex-wrap items-center">
+    <div class="mb-2 flex shrink-0 flex-wrap items-center">
       <button type="button" data-tool="pen" class="tool btn-icon" title="قلم">${icon('pencil')}</button>
       <button type="button" data-tool="eraser" class="tool btn-icon text-xs font-medium" title="ممحاة">ممحاة</button>
       <span class="mx-1 h-5 w-px bg-black/10 dark:bg-white/20"></span>
@@ -541,11 +548,27 @@ function renderDrawMode(n: Note) {
       <button type="button" id="dUndo" class="btn-icon" title="تراجع">${icon('undo')}</button>
       <button type="button" id="dClear" class="btn-icon" title="مسح الكل">${icon('trash')}</button>
     </div>
-    <div class="draw-surface overflow-hidden border border-black/10 dark:border-white/10">
-      <canvas id="dCanvas" class="block h-auto w-full text-slate-900 dark:text-slate-100" style="aspect-ratio:${d.width}/${d.height}" dir="ltr"></canvas>
+    <div id="dStage" class="flex min-h-0 flex-1 items-center justify-center">
+      <div class="draw-surface overflow-hidden border border-black/10 dark:border-white/10">
+        <canvas id="dCanvas" class="block text-slate-900 dark:text-slate-100" dir="ltr"></canvas>
+      </div>
     </div>`;
 
-  const b = new DrawingBoard($<HTMLCanvasElement>('#dCanvas', root), d, () => {
+  // أكبر مقاس ممكن يملأ المساحة المتاحة مع حفظ نسبة الرسم
+  const stage = $('#dStage', root);
+  const cv = $<HTMLCanvasElement>('#dCanvas', root);
+  const fitCanvas = () => {
+    const sw = stage.clientWidth - 2;
+    const sh = stage.clientHeight - 2;
+    if (sw <= 0 || sh <= 0) return;
+    const k = Math.min(sw / d.width, sh / d.height);
+    cv.style.width = `${Math.floor(d.width * k)}px`;
+    cv.style.height = `${Math.floor(d.height * k)}px`;
+  };
+  fitCanvas();
+  new ResizeObserver(fitCanvas).observe(stage);
+
+  const b = new DrawingBoard(cv, d, () => {
     touch();
     refresh();
   });
