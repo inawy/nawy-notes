@@ -1,9 +1,10 @@
 /** اختيار ملف من الجهاز/الكاميرا. يعيد null عند الإلغاء. */
-export function pickFile(accept: string): Promise<File | null> {
+export function pickFile(accept: string, capture = false): Promise<File | null> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = accept;
+    if (capture) input.setAttribute('capture', ''); // يفتح تطبيق التسجيل/الكاميرا في الجهاز
     input.style.display = 'none';
     document.body.appendChild(input);
     const done = (f: File | null) => {

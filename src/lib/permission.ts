@@ -13,7 +13,7 @@ export function micSteps(ua: string, installed: boolean, ios: boolean): string[]
 }
 
 /** نافذة سفلية تشرح كيف يُفعَّل الميكروفون وتتيح إعادة المحاولة. */
-export function showMicHelp(onRetry: () => void): void {
+export function showMicHelp(onRetry: () => void, onDeviceRecorder?: () => void): void {
   document.getElementById('micHelp')?.remove();
   const steps = micSteps(navigator.userAgent, isStandalone(window), isIOS(navigator));
   const wrap = document.createElement('div');
@@ -30,8 +30,13 @@ export function showMicHelp(onRetry: () => void): void {
         <button type="button" id="micRetry" class="btn-primary flex-1">إعادة المحاولة</button>
         <button type="button" id="micClose" class="btn-icon flex-1 !text-slate-600 dark:!text-slate-300">إغلاق</button>
       </div>
+      ${onDeviceRecorder ? '<button type="button" id="micDevice" class="mt-2 min-h-11 w-full rounded-xl border border-slate-200 px-4 text-sm font-medium dark:border-slate-700">أو سجّل بمسجّل الجهاز (بدون إذن)</button>' : ''}
     </div>`;
-  const close = () => wrap.remove();
+  let perm: PermissionStatus | null = null;
+  const close = () => {
+    if (perm) perm.onchange = null;
+    wrap.remove();
+  };
   wrap.onclick = (e) => {
     if (e.target === wrap) close();
   };
@@ -42,4 +47,19 @@ export function showMicHelp(onRetry: () => void): void {
     onRetry(); // نقرة مستخدم جديدة: شرط ظهور نافذة الإذن إن كانت الحالة "prompt"
   };
   wrap.querySelector<HTMLElement>('#micRetry')!.focus();
+  const dev = wrap.querySelector<HTMLElement>('#micDevice');
+  if (dev) dev.onclick = () => {
+    close();
+    onDeviceRecorder?.(); // داخل نقرة المستخدم: شرط فتح مسجّل الجهاز
+  };
+  // عندما يفعّل المستخدم الإذن من الإعدادات ويعود، نكمل تلقائياً بلا نقرة إضافية
+  void navigator.permissions?.query({ name: 'microphone' as PermissionName }).then((st) => {
+    perm = st;
+    st.onchange = () => {
+      if (st.state === 'granted' && wrap.isConnected) {
+        close();
+        onRetry();
+      }
+    };
+  }).catch(() => { /* المتصفح لا يدعم استعلام الإذن: يبقى زر إعادة المحاولة */ });
 }
