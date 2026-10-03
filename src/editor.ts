@@ -215,10 +215,29 @@ function renderNote(n: Note) {
 }
 
 // ---------- نص ----------
+const TIP_KEY = 'nawy-note:tip-dictation';
+
+/** تلميح للهواتف: الكتابة بالصوت عبر ميكروفون لوحة المفاتيح (محلية وبلا إذن موقع). */
+function mountDictationTip(root: HTMLElement, n: Note) {
+  try {
+    if (!window.matchMedia('(pointer: coarse)').matches || localStorage.getItem(TIP_KEY) || n.body) return;
+  } catch { return; }
+  const tip = document.createElement('div');
+  tip.className = 'mt-2 flex items-center gap-1 rounded-xl bg-black/5 ps-3 text-xs text-slate-600 dark:bg-white/10 dark:text-slate-300';
+  tip.innerHTML = `<span class="flex-1 py-2">للكتابة بالصوت: اضغط على ميكروفون لوحة المفاتيح 🎤</span>
+    <button type="button" class="btn-icon" aria-label="إخفاء التلميح">${icon('x', 'w-4 h-4')}</button>`;
+  tip.querySelector('button')!.onclick = () => {
+    tip.remove();
+    try { localStorage.setItem(TIP_KEY, '1'); } catch { /* ignore */ }
+  };
+  root.appendChild(tip);
+}
+
 function renderText(n: Note, root: HTMLElement) {
   root.innerHTML = `<textarea id="eText" rows="8" placeholder="اكتب ملاحظتك..."
     class="w-full resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-slate-400">${esc(n.body)}</textarea>`;
   const ta = $<HTMLTextAreaElement>('#eText', root);
+  mountDictationTip(root, n);
   const fit = () => {
     ta.style.height = 'auto';
     ta.style.height = Math.max(150, ta.scrollHeight) + 'px';
