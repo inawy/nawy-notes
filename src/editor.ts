@@ -4,6 +4,7 @@ import { $, debounce, esc, uid } from './lib/util';
 import { icon } from './lib/icons';
 import { DrawingBoard, PEN_COLORS, PEN_SIZES, drawingPreviewSvg } from './lib/draw';
 import { VoiceRecorder, pickFile, resizeImage } from './lib/media';
+import { showMicHelp } from './lib/permission';
 import { toast } from './lib/toast';
 
 /** إجراء يُنفَّذ فور فتح ملاحظة جديدة (من الزر العائم). */
@@ -403,8 +404,12 @@ async function startRecording() {
   try {
     await r.start();
   } catch (err) {
-    const denied = err instanceof DOMException && err.name === 'NotAllowedError';
-    toast(denied ? 'لم يُسمح باستخدام الميكروفون' : err instanceof Error ? err.message : 'تعذّر بدء التسجيل');
+    const denied = err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
+    if (denied) {
+      showMicHelp(() => void startRecording()); // يبقى المحرر مفتوحاً ليعيد المستخدم المحاولة
+      return;
+    }
+    toast(err instanceof Error ? err.message : 'تعذّر بدء التسجيل');
     if (current && isEmptyNote(current)) void closeEditor();
     return;
   }
