@@ -77,7 +77,7 @@ function syncToolbar() {
 }
 
 function renderSortMenu() {
-  const check = (on: boolean) => `<span class="flex w-4 justify-center text-sky-500">${on ? icon('check', 'w-4 h-4', 3) : ''}</span>`;
+  const check = (on: boolean) => `<span class="flex w-4 justify-center text-brand-500">${on ? icon('check', 'w-4 h-4', 3) : ''}</span>`;
   const dirs: { id: SortDir; label: string }[] = [
     { id: 'desc', label: 'الأحدث أولاً' },
     { id: 'asc', label: 'الأقدم أولاً' },
@@ -158,7 +158,7 @@ function cardHTML(n: Note): string {
 
   const actions = trash
     ? `<div class="mt-3 flex gap-2 border-t border-black/5 pt-2 dark:border-white/10">
-         <button type="button" data-act="restore" class="flex min-h-11 items-center gap-1 px-1 text-xs font-medium text-sky-600 dark:text-sky-300">${icon('restore', 'w-4 h-4')} استعادة</button>
+         <button type="button" data-act="restore" class="flex min-h-11 items-center gap-1 px-1 text-xs font-medium text-brand-600 dark:text-brand-300">${icon('restore', 'w-4 h-4')} استعادة</button>
          <button type="button" data-act="purge" class="ms-auto flex min-h-11 items-center gap-1 px-1 text-xs font-medium text-red-500">${icon('trash', 'w-4 h-4')} حذف نهائي</button>
        </div>`
     : '';
@@ -319,7 +319,7 @@ function mountFab() {
   $('#fabMenu').innerHTML = FAB_ITEMS.map(
     (i) => `<button type="button" data-type="${i.type}" class="flex items-center gap-3">
       <span class="rounded-lg bg-white px-3 py-1.5 text-sm font-medium shadow-card dark:bg-slate-800">${i.label}</span>
-      <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-sky-600 shadow-card dark:bg-slate-800 dark:text-sky-300">${icon(i.icon)}</span>
+      <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-600 shadow-card dark:bg-slate-800 dark:text-brand-300">${icon(i.icon)}</span>
     </button>`,
   ).join('');
 }
@@ -345,6 +345,14 @@ function create(type: FabAction) {
 const VIEW_ORDER: View[] = ['notes', 'archive', 'trash'];
 
 function setView(v: View) {
+  const dir = VIEW_ORDER.indexOf(v) - VIEW_ORDER.indexOf(view);
+  if (dir !== 0) {
+    const m = document.querySelector('main')!;
+    m.style.setProperty('--dx', `${dir > 0 ? -28 : 28}px`); // RTL: التالي يدخل من اليسار
+    m.classList.remove('view-enter');
+    void m.offsetWidth; // يعيد تشغيل الحركة
+    m.classList.add('view-enter');
+  }
   view = v;
   if (v !== 'notes') $<HTMLInputElement>('#search').value = '';
   query = '';

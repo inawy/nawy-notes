@@ -22,7 +22,7 @@ export function showMicHelp(onRetry: () => void, onDeviceRecorder?: (capture: bo
   wrap.setAttribute('role', 'dialog');
   wrap.setAttribute('aria-modal', 'true');
   wrap.innerHTML = `
-    <div class="modal-enter w-full max-w-md rounded-t-2xl bg-white p-5 text-slate-800 shadow-2xl dark:bg-slate-900 dark:text-slate-100 sm:rounded-2xl" style="padding-bottom:max(1.25rem,env(safe-area-inset-bottom))">
+    <div class="sheet-enter w-full max-w-md rounded-t-2xl bg-white p-5 text-slate-800 shadow-2xl dark:bg-slate-900 dark:text-slate-100 sm:rounded-2xl" style="padding-bottom:max(1.25rem,env(safe-area-inset-bottom))">
       <h2 class="mb-2 text-lg font-semibold">الميكروفون غير مفعّل</h2>
       <p class="mb-3 text-sm text-slate-500 dark:text-slate-400">لم يُمنح إذن الميكروفون لهذا الموقع، والمتصفح لا يسمح للتطبيق بطلبه مرة أخرى بعد الرفض. فعّله من الإعدادات:</p>
       <ol class="mb-4 list-decimal space-y-1.5 ps-5 text-sm">${steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
@@ -105,7 +105,7 @@ export function showMicIntro(onGo: () => void, onCancel: () => void): void {
   wrap.setAttribute('role', 'dialog');
   wrap.setAttribute('aria-modal', 'true');
   wrap.innerHTML = `
-    <div class="modal-enter w-full max-w-md rounded-t-2xl bg-white p-5 text-slate-800 shadow-2xl dark:bg-slate-900 dark:text-slate-100 sm:rounded-2xl" style="padding-bottom:max(1.25rem,env(safe-area-inset-bottom))">
+    <div class="sheet-enter w-full max-w-md rounded-t-2xl bg-white p-5 text-slate-800 shadow-2xl dark:bg-slate-900 dark:text-slate-100 sm:rounded-2xl" style="padding-bottom:max(1.25rem,env(safe-area-inset-bottom))">
       <h2 class="mb-2 text-lg font-semibold">التسجيل الصوتي يحتاج الميكروفون</h2>
       <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">سيظهر الآن طلب من المتصفح. اضغط <strong class="text-slate-800 dark:text-slate-100">«سماح»</strong> (أو «أثناء استخدام التطبيق»). يبقى التسجيل على جهازك فقط.</p>
       <div class="flex gap-2">

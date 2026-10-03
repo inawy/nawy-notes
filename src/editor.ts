@@ -255,14 +255,14 @@ function renderText(n: Note, root: HTMLElement) {
 function renderList(n: Note, root: HTMLElement) {
   const row = (it: CheckItem) => `
     <div class="flex items-center gap-2" data-id="${it.id}">
-      <input type="checkbox" class="h-4.5 w-4.5 shrink-0 accent-sky-500" ${it.done ? 'checked' : ''} aria-label="تم" />
+      <input type="checkbox" class="h-4.5 w-4.5 shrink-0 accent-brand-500" ${it.done ? 'checked' : ''} aria-label="تم" />
       <input type="text" value="${esc(it.text)}" placeholder="عنصر"
         class="min-w-0 flex-1 bg-transparent py-1 text-[15px] outline-none placeholder:text-slate-400 ${it.done ? 'line-through opacity-50' : ''}" />
       <button type="button" class="rm btn-icon" aria-label="حذف العنصر">${icon('x', 'w-4 h-4')}</button>
     </div>`;
   const draw = () => {
     root.innerHTML = `<div class="space-y-1" id="rows">${n.items.map(row).join('')}</div>
-      <button type="button" id="addItem" class="mt-2 flex items-center gap-2 text-sm text-slate-500 hover:text-sky-500">
+      <button type="button" id="addItem" class="mt-2 flex items-center gap-2 text-sm text-slate-500 hover:text-brand-500">
         ${icon('plus', 'w-4 h-4')} إضافة عنصر</button>`;
   };
   draw();
@@ -580,7 +580,7 @@ function renderDrawMode(n: Note) {
       const on = t.dataset.color === b.color && b.tool === 'pen';
       const dot = t.firstElementChild as HTMLElement;
       dot.classList.toggle('ring-2', on);
-      dot.classList.toggle('ring-sky-500', on);
+      dot.classList.toggle('ring-brand-500', on);
       dot.classList.toggle('ring-offset-1', on);
     });
     root.querySelectorAll<HTMLElement>('.pen-size').forEach((t) =>

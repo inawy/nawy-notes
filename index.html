@@ -23,8 +23,36 @@
         }
       } catch (e) {}
     </script>
+    <style>
+      /* شاشة البداية: بلون الأيقونة، تُرسم النقطة وعلامة الصح ثم تتلاشى */
+      #splash{position:fixed;inset:0;z-index:90;background:#3d7bff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .4s ease,visibility .4s}
+      #splash.out{opacity:0;visibility:hidden;pointer-events:none}
+      #splash svg{width:min(46vw,200px);height:auto;overflow:visible}
+      #splash .sp-name{color:#fff;font:600 20px/1 'IBM Plex Sans Arabic','Segoe UI',Tahoma,system-ui,sans-serif;letter-spacing:.2px;animation:spUp .5s cubic-bezier(.2,.8,.2,1) .9s both}
+      .sp-page{transform-origin:512px 512px;animation:spPop .55s cubic-bezier(.2,.9,.3,1.15) both}
+      .sp-fold{animation:spFade .3s ease .55s both}
+      .sp-dot{transform-box:fill-box;transform-origin:center;animation:spDot .4s cubic-bezier(.2,.9,.3,1.5) .4s both}
+      .sp-check{stroke-dasharray:230;stroke-dashoffset:230;animation:spDraw .5s cubic-bezier(.4,0,.2,1) .7s forwards}
+      @keyframes spPop{from{opacity:0;transform:scale(.82) translateY(14px)}to{opacity:1;transform:none}}
+      @keyframes spDot{from{opacity:0;transform:scale(0)}to{opacity:1;transform:none}}
+      @keyframes spDraw{to{stroke-dashoffset:0}}
+      @keyframes spFade{from{opacity:0}to{opacity:1}}
+      @keyframes spUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+      @media (prefers-reduced-motion:reduce){#splash *{animation:none!important}.sp-check{stroke-dashoffset:0}}
+    </style>
   </head>
   <body class="min-h-dvh overflow-x-hidden bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
+    <div id="splash" aria-hidden="true">
+      <svg viewBox="212 162 600 700" xmlns="http://www.w3.org/2000/svg">
+        <g class="sp-page"><g transform="translate(512 512) scale(1.12) translate(-512 -512)">
+          <path d="M350 212H674Q762 212 762 300V672L630 812H350Q262 812 262 724V300Q262 212 350 212Z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          <path class="sp-fold" d="M638 684H744L638 790Z" fill="#BFD3FF" stroke="#BFD3FF" stroke-width="20" stroke-linejoin="round"/>
+          <circle class="sp-dot" cx="410" cy="500" r="58" fill="#3D7BFF"/>
+          <path class="sp-check" d="M522 498L568 542L662 436" fill="none" stroke="#3D7BFF" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+        </g></g>
+      </svg>
+      <div class="sp-name">ناوي نوت</div>
+    </div>
     <script>
       // شريط أخطاء مرئي: يعمل حتى لو فشل تحميل شيفرة التطبيق نفسها
       (function () {
@@ -49,15 +77,31 @@
           msg = String(msg);
           if (seen[msg]) return;
           seen[msg] = 1;
+          var spl = document.getElementById('splash'); if (spl) { spl.classList.add('out'); }
           var p = document.createElement('p');
           p.style.margin = '4px 0';
           p.textContent = msg;
           if (tag) p.setAttribute('data-tag', tag);
           box().querySelector('#fatalList').appendChild(p);
         }
+        // شاشة البداية: تبقى مدة كافية لتكتمل الحركة في أول فتح، وتختفي فوراً تقريباً في الفتحات التالية
+        var t0 = Date.now(), meta = document.querySelector('meta[name=theme-color]'), prevColor = meta && meta.getAttribute('content'), visited = false;
+        try { visited = !!sessionStorage.getItem('nawy-note:splash'); sessionStorage.setItem('nawy-note:splash', '1'); } catch (e) {}
+        if (meta) meta.setAttribute('content', '#3d7bff');
+        function hideSplash() {
+          var sp = document.getElementById('splash');
+          if (!sp) return;
+          var wait = visited ? 0 : Math.max(0, 1300 - (Date.now() - t0));
+          setTimeout(function () {
+            sp.classList.add('out');
+            if (meta && prevColor) meta.setAttribute('content', document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff');
+            setTimeout(function () { sp.remove(); }, 450);
+          }, wait);
+        }
         window.__nawyReport = report;
         window.__nawyDone = function () {
           window.__nawyReady = true;
+          hideSplash();
           var b = document.getElementById('fatal');
           if (!b) return;
           b.querySelectorAll('[data-tag=watchdog]').forEach(function (p) { p.remove(); });
@@ -95,7 +139,7 @@
           <button id="btnTheme" type="button" class="btn-icon" title="الوضع الليلي" aria-label="الوضع الليلي"></button>
         </div>
         <!-- الصف 2: البحث بعرض كامل -->
-        <div id="searchBox" class="relative mx-auto mt-1 flex h-11 max-w-xl items-center rounded-xl bg-slate-100 transition focus-within:ring-2 focus-within:ring-sky-400 dark:bg-slate-800">
+        <div id="searchBox" class="relative mx-auto mt-1 flex h-11 max-w-xl items-center rounded-xl bg-slate-100 transition focus-within:ring-2 focus-within:ring-brand-400 dark:bg-slate-800">
           <span id="searchIcon" class="pointer-events-none ps-3 text-slate-400"></span>
           <input id="search" type="search" autocomplete="off" enterkeyhint="search" placeholder="ابحث في ملاحظاتك..."
             class="h-full min-w-0 flex-1 bg-transparent px-3 text-base outline-none placeholder:text-slate-400" />
@@ -134,7 +178,7 @@
       <div id="fabBackdrop" class="fixed inset-0 hidden bg-white/60 backdrop-blur-[2px] dark:bg-black/50"></div>
       <div id="fabMenu" class="absolute bottom-[4.5rem] hidden flex-col-reverse items-end gap-3" style="inset-inline-end:0"></div>
       <button id="fab" type="button" aria-label="إضافة ملاحظة" aria-expanded="false"
-        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-sky-500 text-white shadow-lg transition active:scale-95"></button>
+        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg transition active:scale-95"></button>
     </div>
 
     <!-- شريط التحديث: لا نعيد التحميل أبداً وسط الكتابة، المستخدم يقرر -->

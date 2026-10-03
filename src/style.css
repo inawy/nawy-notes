@@ -4,6 +4,15 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  /* لون ناوي نوت = لون الأيقونة #3D7BFF */
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dbe7ff;
+  --color-brand-300: #9dbfff;
+  --color-brand-400: #6b9aff;
+  --color-brand-500: #3d7bff;
+  --color-brand-600: #2b63e6;
+  --color-brand-950: #12275a;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --font-sans: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
   --shadow-card: 0 1px 3px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.06);
   --shadow-card-hover: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.08);
@@ -24,19 +33,19 @@
   .btn-icon {
     @apply inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200;
   }
-  .btn-icon.active { @apply text-sky-500; }
+  .btn-icon.active { @apply text-brand-500; }
   .btn-primary {
-    @apply min-h-11 rounded-xl bg-sky-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-sky-600;
+    @apply min-h-11 rounded-xl bg-brand-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-brand-600;
   }
   .menu-item { @apply flex min-h-11 w-full items-center gap-3 px-4 py-2 text-start text-sm hover:bg-slate-50 dark:hover:bg-slate-800; }
   .tab { @apply inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-lg px-4 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800; }
-  .tab[aria-current='page'] { @apply bg-sky-50 font-medium text-sky-600 dark:bg-sky-950 dark:text-sky-300; }
+  .tab[aria-current='page'] { @apply bg-brand-50 font-medium text-brand-600 dark:bg-brand-950 dark:text-brand-300; }
 }
 
 /* زر التثبيت */
 .btn-install {
   display: inline-flex; align-items: center; gap: 0.375rem; min-height: 2.75rem; padding-inline: 0.875rem;
-  border-radius: 0.75rem; background: #0ea5e9; color: #fff; font-size: 0.875rem; font-weight: 500; white-space: nowrap;
+  border-radius: 0.75rem; background: var(--color-brand-500); color: #fff; font-size: 0.875rem; font-weight: 500; white-space: nowrap;
 }
 .btn-install[hidden], .update-bar[hidden] { display: none !important; }
 .btn-install:active { transform: scale(0.97); }
@@ -100,11 +109,34 @@ html[data-layout='list'] .notes-grid { --gap: 0.625rem; grid-template-columns: m
 .nc-blue { background: var(--n-blue); } .nc-purple { background: var(--n-purple); }
 .nc-pink { background: var(--n-pink); } .nc-gray { background: var(--n-gray); }
 
-.modal-enter { animation: pop 0.18s ease; }
+/* حركة موحّدة: نفس المنحنى والمدد القصيرة في كل مكان */
+.modal-enter { animation: pop 0.2s var(--ease-out); }
 @keyframes pop {
   from { opacity: 0; transform: scale(0.97) translateY(8px); }
   to { opacity: 1; transform: none; }
 }
+/* الأوراق السفلية على الهاتف تنزلق من الأسفل، وعلى الشاشات الكبيرة تظهر بتكبير خفيف */
+.sheet-enter { animation: sheetUp 0.28s var(--ease-out); }
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+@media (min-width: 640px) { .sheet-enter { animation: pop 0.2s var(--ease-out); } }
+@media (max-width: 639.98px) { #editorCard.modal-enter { animation: sheetUp 0.3s var(--ease-out); } }
+/* تبديل التبويبات: المحتوى ينزلق قليلاً من جهة التبويب الجديد */
+.view-enter { animation: viewIn 0.24s var(--ease-out); }
+@keyframes viewIn { from { opacity: 0; transform: translateX(var(--dx, 0)); } to { opacity: 1; transform: none; } }
+/* عناصر قائمة الإضافة تظهر متتابعة */
+#fabMenu > button { animation: fabItem 0.22s var(--ease-out) both; }
+#fabMenu > button:nth-last-child(1) { animation-delay: 0ms; }
+#fabMenu > button:nth-last-child(2) { animation-delay: 30ms; }
+#fabMenu > button:nth-last-child(3) { animation-delay: 60ms; }
+#fabMenu > button:nth-last-child(4) { animation-delay: 90ms; }
+#fabMenu > button:nth-last-child(5) { animation-delay: 120ms; }
+@keyframes fabItem { from { opacity: 0; transform: translateY(12px) scale(0.9); } to { opacity: 1; transform: none; } }
+.update-bar { animation: sheetUp 0.3s var(--ease-out); }
+/* ردّ فعل اللمس */
+.btn-icon:active, .btn-install:active { transform: scale(0.92); }
+.tab:active { transform: scale(0.96); }
+.btn-icon, .tab, .btn-install { transition: background-color 0.15s, color 0.15s, transform 0.12s var(--ease-out); }
+@media (hover: none) { .note-card:active { transform: scale(0.985); } }
 
 .draw-surface {
   background-image: radial-gradient(rgb(100 116 139 / 0.25) 1px, transparent 1px);
@@ -117,6 +149,6 @@ html[data-layout='list'] .notes-grid { --gap: 0.625rem; grid-template-columns: m
 .drag-ghost { opacity: 0.35; }
 
 @media (prefers-reduced-motion: reduce) {
-  .modal-enter { animation: none; }
-  .note-card { transition: none; }
+  .modal-enter, .sheet-enter, .view-enter, .update-bar, #fabMenu > button, #editorCard.modal-enter { animation: none !important; }
+  .note-card, .btn-icon, .tab, .btn-install { transition: none; }
 }
