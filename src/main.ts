@@ -565,4 +565,21 @@ $('#updateLater').onclick = () => (($('#updateBar').hidden = true));
 // تخزين دائم: يمنع المتصفح من مسح البيانات تحت ضغط المساحة
 void navigator.storage?.persist?.();
 
+// ---------- نقاط الدخول: اختصارات الأيقونة والمشاركة من تطبيقات أخرى ----------
+function handleLaunchIntent() {
+  const q = new URLSearchParams(location.search);
+  const kind = q.get('new');
+  const shared = [q.get('title'), q.get('text'), q.get('url')].filter(Boolean) as string[];
+  if (!kind && !shared.length) return;
+  history.replaceState(null, '', location.pathname + location.hash); // لا يتكرر عند التحديث
+  if (shared.length) {
+    const note = newNote('text');
+    note.title = shared.length > 1 ? shared[0] : '';
+    note.body = shared.slice(shared.length > 1 ? 1 : 0).join('\n');
+    openEditor(note, true);
+  } else if (kind === 'text' || kind === 'list') openEditor(newNote(kind), true);
+  else if (kind === 'audio' || kind === 'draw') openEditor(newNote('text'), true, kind);
+}
+handleLaunchIntent();
+
 appReady();

@@ -22,6 +22,15 @@ export default defineConfig({
         display: 'standalone',
         background_color: '#f8fafc',
         theme_color: '#f8fafc',
+        // الضغط المطوّل على الأيقونة: إجراءات سريعة تفتح المحرر مباشرة
+        shortcuts: [
+          { name: 'ملاحظة جديدة', short_name: 'ملاحظة', url: './?new=text', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'قائمة جديدة', short_name: 'قائمة', url: './?new=list', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'تسجيل صوتي', short_name: 'تسجيل', url: './?new=audio', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'رسم', short_name: 'رسم', url: './?new=draw', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
+        ],
+        // المشاركة من تطبيقات أخرى (نص/رابط) تصبح ملاحظة جديدة
+        share_target: { action: './', method: 'GET', params: { title: 'title', text: 'text', url: 'url' } },
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
