@@ -129,6 +129,9 @@ html[data-layout='list'] .notes-grid { --gap: 0.625rem; grid-template-columns: m
 @media (max-width: 639.98px) { #editorCard.modal-enter { animation: sheetUp 0.3s var(--ease-out); } }
 /* تبديل التبويبات: ظهور هادئ بلا إزاحة أفقية (الإزاحة الأفقية كانت تهزّ الصفحة) */
 html, body { overscroll-behavior-x: none; }
+/* خلفية على html نفسه: تملأ كل الشاشة بما فيها منطقة شريط التنقل السفلي */
+html { background-color: #f8fafc; min-height: 100%; }
+html.dark { background-color: #020617; }
 main { touch-action: pan-y; }
 .view-enter { animation: viewIn 0.2s var(--ease-out); }
 @keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

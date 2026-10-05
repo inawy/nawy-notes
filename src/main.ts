@@ -103,7 +103,7 @@ function toggleSortMenu(open?: boolean) {
 function syncTheme() {
   const dark = document.documentElement.classList.contains('dark');
   $('#btnTheme').innerHTML = icon(dark ? 'sun' : 'moon') + `<span>${dark ? 'الوضع النهاري' : 'الوضع الليلي'}</span>`;
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#0f172a' : '#ffffff'); // لون الهيدر، فيمتزج شريط الحالة معه
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#020617' : '#f8fafc'); // لون الهيدر، فيمتزج شريط الحالة معه
 }
 
 // ---------- البطاقات ----------
