@@ -119,33 +119,37 @@
         }, 6000);
       })();
     </script>
-    <header class="sticky top-0 z-30 border-b border-slate-200/70 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
-      <div class="safe-x mx-auto max-w-6xl">
-        <!-- الصف 1: الهوية + الإجراءات -->
-        <div class="flex items-center gap-1 pt-2">
-          <div class="flex min-w-0 flex-1 items-center gap-2">
-            <img src="./icon-192.png" alt="" width="36" height="36" class="h-9 w-9 shrink-0 rounded-[22%]" />
-            <span class="truncate text-lg font-semibold tracking-tight">ناوي نوت</span>
-          </div>
-          <button id="btnInstall" type="button" hidden class="btn-install" aria-label="تثبيت ناوي نوت" title="تثبيت ناوي نوت">
-            <span id="installIcon" aria-hidden="true"></span><span>تثبيت<span class="hidden sm:inline"> ناوي نوت</span></span>
-          </button>
-          <button id="btnBackup" type="button" class="btn-icon" title="نسخ احتياطي" aria-label="نسخ احتياطي"></button>
-          <button id="btnTheme" type="button" class="btn-icon" title="الوضع الليلي" aria-label="الوضع الليلي"></button>
-        </div>
-        <!-- الصف 2: البحث بعرض كامل -->
-        <div id="searchBox" class="relative mx-auto mt-1 mb-2 flex h-12 max-w-xl items-center rounded-full bg-slate-100 dark:bg-slate-800">
-          <span id="searchIcon" class="pointer-events-none ps-3 text-slate-400"></span>
+    <header class="sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md dark:bg-slate-950/90">
+      <div class="safe-x mx-auto max-w-6xl py-2">
+        <!-- شريط واحد: قائمة + بحث + ترتيب (مثل Keep) -->
+        <div id="searchBox" class="relative mx-auto flex h-12 max-w-xl items-center rounded-full border border-slate-200/80 bg-white shadow-[0_1px_4px_rgba(20,40,90,.06)] dark:border-slate-700/70 dark:bg-slate-900">
+          <button id="btnMenu" type="button" class="btn-icon ms-1 !rounded-full" aria-label="القائمة" aria-haspopup="dialog"></button>
           <input id="search" type="search" autocomplete="off" enterkeyhint="search" placeholder="ابحث في ملاحظاتك..."
-            class="h-full min-w-0 flex-1 bg-transparent px-3 text-base outline-none placeholder:text-slate-400" />
-          <button id="btnSort" type="button" class="btn-icon" aria-haspopup="menu" aria-expanded="false"></button>
-          <button id="btnLayout" type="button" class="btn-icon"></button>
+            class="h-full min-w-0 flex-1 bg-transparent px-2 text-base outline-none placeholder:text-slate-400" />
+          <button id="btnSort" type="button" class="btn-icon me-1 !rounded-full" aria-haspopup="menu" aria-expanded="false"></button>
           <div id="sortMenu" role="menu" class="modal-enter absolute end-0 top-full z-40 mt-2 hidden w-64 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"></div>
         </div>
       </div>
     </header>
 
-    <main class="safe-x main-pad mx-auto min-h-[calc(100dvh-8rem)] max-w-6xl pt-3 sm:pt-6">
+    <!-- القائمة الجانبية: التنقل + باقي الأدوات -->
+    <div id="drawerRoot" class="fixed inset-0 z-[70] hidden">
+      <div id="drawerBackdrop" class="absolute inset-0 bg-black/30"></div>
+      <aside id="drawer" class="drawer-enter absolute inset-y-0 start-0 flex w-72 max-w-[82vw] flex-col gap-1 overflow-y-auto bg-white px-3 pb-6 dark:bg-slate-900" aria-label="القائمة">
+        <div class="flex items-center gap-3 px-3 pb-3 pt-6" style="padding-top:calc(1.5rem + env(safe-area-inset-top))">
+          <img src="./icon-192.png" alt="" width="36" height="36" class="h-9 w-9 rounded-[22%]" />
+          <span class="text-lg font-semibold tracking-tight">ناوي نوت</span>
+        </div>
+        <nav id="tabs" class="flex flex-col gap-1" aria-label="العروض"></nav>
+        <div class="my-2 border-t border-slate-200/80 dark:border-slate-800"></div>
+        <button id="btnLayout" type="button" class="drawer-item"></button>
+        <button id="btnTheme" type="button" class="drawer-item"></button>
+        <button id="btnBackup" type="button" class="drawer-item"></button>
+        <button id="btnInstall" type="button" hidden class="drawer-item !text-brand-600 dark:!text-brand-300"><span id="installIcon" aria-hidden="true"></span><span>تثبيت ناوي نوت</span></button>
+      </aside>
+    </div>
+
+    <main class="safe-x main-pad mx-auto min-h-[calc(100dvh-5rem)] max-w-6xl pt-3 sm:pt-6">
       <div id="trashBar" class="mx-auto mb-4 hidden max-w-xl items-center justify-between gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm text-slate-500 dark:bg-slate-800">
         <span>تُحذف الملاحظات نهائياً بعد 30 يوماً.</span>
         <button id="btnEmptyTrash" type="button" class="min-h-11 shrink-0 px-1 font-medium text-red-500">إفراغ المهملات</button>
@@ -166,15 +170,12 @@
       </div>
     </main>
 
-    <!-- التنقل السفلي العائم + زر الإضافة -->
-    <div id="bottomNav" class="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-center justify-center gap-3">
-      <nav id="tabs" class="pointer-events-auto flex gap-1 rounded-full border border-slate-200/80 bg-white/95 p-1 shadow-[0_6px_24px_rgba(20,40,90,.10)] backdrop-blur-md dark:border-slate-700/70 dark:bg-slate-900/95" aria-label="العروض"></nav>
-      <div id="fabRoot" class="pointer-events-auto relative">
-        <div id="fabBackdrop" class="pointer-events-auto fixed inset-0 hidden bg-white/70 backdrop-blur-[2px] dark:bg-black/60"></div>
-        <div id="fabMenu" class="absolute bottom-[4rem] hidden flex-col-reverse items-end gap-3" style="inset-inline-end:0"></div>
-        <button id="fab" type="button" aria-label="إضافة ملاحظة" aria-expanded="false"
-          class="relative flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_6px_20px_rgba(61,123,255,.35)] transition active:scale-95"></button>
-      </div>
+    <!-- زر الإضافة العائم -->
+    <div id="fabRoot" class="fixed z-40">
+      <div id="fabBackdrop" class="fixed inset-0 hidden bg-white/70 backdrop-blur-[2px] dark:bg-black/60"></div>
+      <div id="fabMenu" class="absolute bottom-[4.5rem] hidden flex-col-reverse items-end gap-3" style="inset-inline-end:0"></div>
+      <button id="fab" type="button" aria-label="إضافة ملاحظة" aria-expanded="false"
+        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_6px_20px_rgba(61,123,255,.35)] transition active:scale-95"></button>
     </div>
 
     <!-- شريط التحديث: لا نعيد التحميل أبداً وسط الكتابة، المستخدم يقرر -->

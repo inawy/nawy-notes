@@ -22,19 +22,20 @@ let layout: Layout = 'grid';
 let sub: Subscription | undefined;
 let cache = new Map<string, Note>();
 
+const VIEW_ICON = { notes: 'notes', archive: 'archive', trash: 'trash' } as const;
 const VIEW_LABEL: Record<View, string> = { notes: 'الملاحظات', archive: 'الأرشيف', trash: 'المهملات' };
 
 // ---------- الواجهة الثابتة ----------
 function mountChrome() {
-  $('#searchIcon').innerHTML = icon('search');
-  $('#btnBackup').innerHTML = icon('download');
+  $('#btnMenu').innerHTML = icon('menu', 'w-6 h-6');
+  $('#btnBackup').innerHTML = icon('download') + '<span>نسخ احتياطي</span>';
   $('#installIcon').innerHTML = icon('phone', 'w-5 h-5');
   $('#updateLater').innerHTML = icon('x', 'w-5 h-5');
   mountFab();
   syncToolbar();
   $('#emptyIcon').innerHTML = icon('notes', 'w-10 h-10');
   $('#tabs').innerHTML = (Object.keys(VIEW_LABEL) as View[])
-    .map((v) => `<button type="button" class="tab" data-view="${v}">${VIEW_LABEL[v]}</button>`)
+    .map((v) => `<button type="button" class="tab" data-view="${v}">${icon(VIEW_ICON[v])}<span>${VIEW_LABEL[v]}</span></button>`)
     .join('');
   syncTheme();
 }
@@ -64,8 +65,8 @@ const SORT_OPTIONS: { id: SortMode; label: string }[] = [
 function syncToolbar() {
   const toGrid = layout === 'list';
   const layoutBtn = $('#btnLayout');
-  layoutBtn.innerHTML = icon(toGrid ? 'grid' : 'rows');
   layoutBtn.title = toGrid ? 'عرض شبكة' : 'عرض قائمة';
+  layoutBtn.innerHTML = icon(toGrid ? 'grid' : 'rows') + `<span>${layoutBtn.title}</span>`;
   layoutBtn.setAttribute('aria-label', layoutBtn.title);
   document.documentElement.dataset.layout = layout;
 
@@ -101,7 +102,7 @@ function toggleSortMenu(open?: boolean) {
 
 function syncTheme() {
   const dark = document.documentElement.classList.contains('dark');
-  $('#btnTheme').innerHTML = icon(dark ? 'sun' : 'moon');
+  $('#btnTheme').innerHTML = icon(dark ? 'sun' : 'moon') + `<span>${dark ? 'الوضع النهاري' : 'الوضع الليلي'}</span>`;
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#0f172a' : '#ffffff'); // لون الهيدر، فيمتزج شريط الحالة معه
 }
 
@@ -422,6 +423,14 @@ function wire() {
     if (i >= 0 && i < VIEW_ORDER.length) setView(VIEW_ORDER[i]);
   }, { passive: true });
 
+  const drawer = (on: boolean) => {
+    $('#drawerRoot').classList.toggle('hidden', !on);
+    $('#btnMenu').setAttribute('aria-expanded', String(on));
+  };
+  $('#btnMenu').onclick = () => { toggleSortMenu(false); drawer(true); };
+  $('#drawerBackdrop').onclick = () => drawer(false);
+  $('#drawer').addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('button')) drawer(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') drawer(false); });
   $('#tabs').onclick = (e) => {
     const v = (e.target as HTMLElement).closest<HTMLElement>('[data-view]')?.dataset.view as View | undefined;
     if (v) setView(v);

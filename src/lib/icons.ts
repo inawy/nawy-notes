@@ -11,6 +11,7 @@ const PATHS = {
   undo: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6',
   x: 'M6 18L18 6M6 6l12 12',
   plus: 'M12 4v16m8-8H4',
+  menu: 'M4 6h16M4 12h16M4 18h16',
   check: 'M5 13l4 4L19 7',
   download: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4',
   upload: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12',
