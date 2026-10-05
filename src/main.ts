@@ -494,7 +494,7 @@ function wire() {
   const file = $<HTMLInputElement>('#importFile');
   $('#btnBackup').onclick = () => {
     if (confirm('موافق = تصدير نسخة احتياطية\nإلغاء = استيراد نسخة من ملف')) {
-      void exportBackup().then((b) => download(b, `nawy-note-${new Date().toISOString().slice(0, 10)}.json`));
+      void doBackup();
     } else file.click();
   };
   file.onchange = async () => {
@@ -564,6 +564,30 @@ $('#updateLater').onclick = () => (($('#updateBar').hidden = true));
 
 // تخزين دائم: يمنع المتصفح من مسح البيانات تحت ضغط المساحة
 void navigator.storage?.persist?.();
+
+// ---------- النسخ الاحتياطي + تذكير هادئ ----------
+const BK_LAST = 'nawy-note:last-backup';
+const BK_ASKED = 'nawy-note:backup-asked';
+const DAY = 86_400_000;
+async function doBackup() {
+  const b = await exportBackup();
+  download(b, `nawy-note-${new Date().toISOString().slice(0, 10)}.json`);
+  try { localStorage.setItem(BK_LAST, String(Date.now())); } catch { /* تجاهل */ }
+}
+/** البيانات محلية فقط؛ نذكّر مرة كل أسبوعين كحدّ أقصى إن مضى 30 يوماً بلا نسخة. */
+async function maybeRemindBackup() {
+  try {
+    const now = Date.now();
+    if (!localStorage.getItem(BK_ASKED)) { localStorage.setItem(BK_ASKED, String(now)); return; } // أول استخدام: ابدأ العدّ
+    const last = Number(localStorage.getItem(BK_LAST) ?? localStorage.getItem(BK_ASKED));
+    const asked = Number(localStorage.getItem(BK_ASKED));
+    if (now - last < 30 * DAY || now - asked < 14 * DAY) return;
+    if ((await db.notes.toArray()).length < 3) return;
+    localStorage.setItem(BK_ASKED, String(now));
+    toast('ملاحظاتك محفوظة على هذا الجهاز فقط. خذ نسخة احتياطية؟', { label: 'نسخ الآن', run: () => void doBackup() });
+  } catch { /* تجاهل */ }
+}
+setTimeout(() => void maybeRemindBackup(), 4000);
 
 // ---------- نقاط الدخول: اختصارات الأيقونة والمشاركة من تطبيقات أخرى ----------
 function handleLaunchIntent() {

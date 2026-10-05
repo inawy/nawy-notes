@@ -544,20 +544,19 @@ function renderDrawMode(n: Note) {
   const root = $('#editorBody');
   root.className = 'flex min-h-0 flex-1 flex-col overflow-hidden p-3';
   root.innerHTML = `
-    <div class="mb-1 flex shrink-0 items-center justify-between">
-      <span class="text-sm font-medium">رسم</span>
-      <button type="button" id="dDone" class="btn-primary">تم</button>
-    </div>
-    <div class="mb-2 flex shrink-0 flex-wrap items-center">
-      <button type="button" data-tool="pen" class="tool btn-icon" title="قلم">${icon('pencil')}</button>
-      <button type="button" data-tool="eraser" class="tool btn-icon text-xs font-medium" title="ممحاة">ممحاة</button>
-      <span class="mx-1 h-5 w-px bg-black/10 dark:bg-white/20"></span>
-      ${PEN_COLORS.map(swatch).join('')}
-      <span class="mx-1 h-5 w-px bg-black/10 dark:bg-white/20"></span>
-      ${PEN_SIZES.map((s) => `<button type="button" data-size="${s}" class="pen-size flex h-11 w-11 items-center justify-center rounded-lg" aria-label="حجم القلم"><span class="rounded-full bg-current" style="width:${s + 2}px;height:${s + 2}px"></span></button>`).join('')}
-      <span class="flex-1"></span>
+    <div class="flex shrink-0 items-center">
+      <button type="button" id="dDone" class="btn-icon !rounded-full" title="تم" aria-label="تم">${icon('back', 'w-6 h-6')}</button>
+      <span class="flex-1 ps-1 text-sm font-medium">رسم</span>
       <button type="button" id="dUndo" class="btn-icon" title="تراجع">${icon('undo')}</button>
       <button type="button" id="dClear" class="btn-icon" title="مسح الكل">${icon('trash')}</button>
+    </div>
+    <div class="no-scrollbar mb-2 flex shrink-0 items-center overflow-x-auto">
+      <button type="button" data-tool="pen" class="tool btn-icon" title="قلم">${icon('pencil')}</button>
+      <button type="button" data-tool="eraser" class="tool btn-icon text-xs font-medium" title="ممحاة">ممحاة</button>
+      <span class="mx-1 h-5 w-px shrink-0 bg-black/10 dark:bg-white/20"></span>
+      ${PEN_COLORS.map(swatch).join('')}
+      <span class="mx-1 h-5 w-px shrink-0 bg-black/10 dark:bg-white/20"></span>
+      ${PEN_SIZES.map((s) => `<button type="button" data-size="${s}" class="pen-size flex h-11 w-11 shrink-0 items-center justify-center rounded-lg" aria-label="حجم القلم"><span class="rounded-full bg-current" style="width:${s + 2}px;height:${s + 2}px"></span></button>`).join('')}
     </div>
     <div id="dStage" class="flex min-h-0 flex-1 items-center justify-center">
       <div class="draw-surface overflow-hidden border border-black/10 dark:border-white/10">
