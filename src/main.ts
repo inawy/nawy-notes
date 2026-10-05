@@ -423,6 +423,10 @@ function wire() {
     if (i >= 0 && i < VIEW_ORDER.length) setView(VIEW_ORDER[i]);
   }, { passive: true });
 
+  // قائمة المتصفح السياقية (نسخ/مشاركة) لا مكان لها في التطبيق إلا داخل حقول الكتابة
+  document.addEventListener('contextmenu', (e) => {
+    if (!(e.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) e.preventDefault();
+  });
   const drawer = (on: boolean) => {
     $('#drawerRoot').classList.toggle('hidden', !on);
     $('#btnMenu').setAttribute('aria-expanded', String(on));

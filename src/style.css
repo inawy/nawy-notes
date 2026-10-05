@@ -129,6 +129,11 @@ html[data-layout='list'] .notes-grid { --gap: 0.625rem; grid-template-columns: m
 @media (max-width: 639.98px) { #editorCard.modal-enter { animation: sheetUp 0.3s var(--ease-out); } }
 /* تبديل التبويبات: ظهور هادئ بلا إزاحة أفقية (الإزاحة الأفقية كانت تهزّ الصفحة) */
 html, body { overscroll-behavior-x: none; }
+/* سلوك تطبيق لا صفحة ويب: لا تحديد نص بالضغط المطوّل، إلا داخل حقول الكتابة */
+body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea, [contenteditable='true'], [contenteditable='true'] * { -webkit-user-select: text; user-select: text; }
+img { -webkit-user-drag: none; }
+
 /* خلفية على html نفسه: تملأ كل الشاشة بما فيها منطقة شريط التنقل السفلي */
 html { background-color: #f8fafc; min-height: 100%; }
 html.dark { background-color: #020617; }
