@@ -124,7 +124,7 @@
         }, 6000);
       })();
     </script>
-    <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
+    <header class="sticky top-0 z-30 border-b border-slate-200/70 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
       <div class="safe-x mx-auto max-w-6xl">
         <!-- الصف 1: الهوية + الإجراءات -->
         <div class="flex items-center gap-1 pt-2">
@@ -139,7 +139,7 @@
           <button id="btnTheme" type="button" class="btn-icon" title="الوضع الليلي" aria-label="الوضع الليلي"></button>
         </div>
         <!-- الصف 2: البحث بعرض كامل -->
-        <div id="searchBox" class="relative mx-auto mt-1 flex h-11 max-w-xl items-center rounded-xl bg-slate-100 transition focus-within:ring-2 focus-within:ring-brand-400 dark:bg-slate-800">
+        <div id="searchBox" class="relative mx-auto mt-1 mb-2 flex h-12 max-w-xl items-center rounded-full bg-slate-100 transition focus-within:ring-2 focus-within:ring-brand-400 dark:bg-slate-800">
           <span id="searchIcon" class="pointer-events-none ps-3 text-slate-400"></span>
           <input id="search" type="search" autocomplete="off" enterkeyhint="search" placeholder="ابحث في ملاحظاتك..."
             class="h-full min-w-0 flex-1 bg-transparent px-3 text-base outline-none placeholder:text-slate-400" />
@@ -147,12 +147,10 @@
           <button id="btnLayout" type="button" class="btn-icon"></button>
           <div id="sortMenu" role="menu" class="modal-enter absolute end-0 top-full z-40 mt-2 hidden w-64 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"></div>
         </div>
-        <!-- الصف 3: التبويبات (تمرير أفقي) -->
-        <nav id="tabs" class="no-scrollbar mx-auto flex max-w-xl gap-1 overflow-x-auto py-1 text-sm sm:justify-center" aria-label="العروض"></nav>
       </div>
     </header>
 
-    <main class="safe-x main-pad mx-auto min-h-[calc(100dvh-11rem)] max-w-6xl pt-3 sm:pt-6">
+    <main class="safe-x main-pad mx-auto min-h-[calc(100dvh-8rem)] max-w-6xl pt-3 sm:pt-6">
       <div id="trashBar" class="mx-auto mb-4 hidden max-w-xl items-center justify-between gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm text-slate-500 dark:bg-slate-800">
         <span>تُحذف الملاحظات نهائياً بعد 30 يوماً.</span>
         <button id="btnEmptyTrash" type="button" class="min-h-11 shrink-0 px-1 font-medium text-red-500">إفراغ المهملات</button>
@@ -173,12 +171,15 @@
       </div>
     </main>
 
-    <!-- زر الإضافة العائم -->
-    <div id="fabRoot" class="fixed z-40">
-      <div id="fabBackdrop" class="fixed inset-0 hidden bg-white/60 backdrop-blur-[2px] dark:bg-black/50"></div>
-      <div id="fabMenu" class="absolute bottom-[4.5rem] hidden flex-col-reverse items-end gap-3" style="inset-inline-end:0"></div>
-      <button id="fab" type="button" aria-label="إضافة ملاحظة" aria-expanded="false"
-        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg transition active:scale-95"></button>
+    <!-- التنقل السفلي العائم + زر الإضافة -->
+    <div id="bottomNav" class="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-center justify-center gap-3">
+      <nav id="tabs" class="pointer-events-auto flex gap-1 rounded-full border border-slate-200/80 bg-white/95 p-1 shadow-[0_6px_24px_rgba(20,40,90,.10)] backdrop-blur-md dark:border-slate-700/70 dark:bg-slate-900/95" aria-label="العروض"></nav>
+      <div id="fabRoot" class="pointer-events-auto relative">
+        <div id="fabBackdrop" class="pointer-events-auto fixed inset-0 hidden bg-white/70 backdrop-blur-[2px] dark:bg-black/60"></div>
+        <div id="fabMenu" class="absolute bottom-[4rem] hidden flex-col-reverse items-end gap-3" style="inset-inline-end:0"></div>
+        <button id="fab" type="button" aria-label="إضافة ملاحظة" aria-expanded="false"
+          class="relative flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_6px_20px_rgba(61,123,255,.35)] transition active:scale-95"></button>
+      </div>
     </div>
 
     <!-- شريط التحديث: لا نعيد التحميل أبداً وسط الكتابة، المستخدم يقرر -->

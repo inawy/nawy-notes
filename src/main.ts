@@ -170,7 +170,7 @@ function cardHTML(n: Note): string {
     (chips.length ? `<div class="mt-2 flex flex-wrap gap-1">${chips.join('')}</div>` : '') +
     actions;
 
-  return `<article class="note-card nc-${n.color} cursor-pointer overflow-hidden rounded-2xl border border-black/5 dark:border-white/5" data-id="${n.id}" ${trash ? '' : 'tabindex="0"'}>
+  return `<article class="note-card nc-${n.color} cursor-pointer overflow-hidden rounded-2xl border border-black/[0.07] dark:border-white/10" data-id="${n.id}" ${trash ? '' : 'tabindex="0"'}>
     ${cover}${inner ? `<div class="p-3 sm:p-4 ${cover ? 'pt-3' : ''}">${inner}</div>` : ''}
   </article>`;
 }
@@ -203,7 +203,6 @@ function render(notes: Note[]) {
   document.querySelectorAll<HTMLElement>('#tabs .tab').forEach((t) => {
     if (t.dataset.view === view) {
       t.setAttribute('aria-current', 'page');
-      t.scrollIntoView?.({ inline: 'nearest', block: 'nearest' });
     } else t.removeAttribute('aria-current');
   });
   layoutMasonry();
@@ -326,8 +325,8 @@ function mountFab() {
   $('#fab').innerHTML = `<span id="fabIcon" class="transition-transform duration-200">${icon('plus', 'w-7 h-7', 2.5)}</span>`;
   $('#fabMenu').innerHTML = FAB_ITEMS.map(
     (i) => `<button type="button" data-type="${i.type}" class="flex items-center gap-3">
-      <span class="rounded-lg bg-white px-3 py-1.5 text-sm font-medium shadow-card dark:bg-slate-800">${i.label}</span>
-      <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-brand-600 shadow-card dark:bg-slate-800 dark:text-brand-300">${icon(i.icon)}</span>
+      <span class="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-medium dark:border-slate-700 dark:bg-slate-800">${i.label}</span>
+      <span class="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-brand-600 dark:border-slate-700 dark:bg-slate-800 dark:text-brand-300">${icon(i.icon)}</span>
     </button>`,
   ).join('');
 }
