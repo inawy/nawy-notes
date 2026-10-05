@@ -1,5 +1,5 @@
 import { COLOR_IDS, COLOR_LABELS, type Attachment, type CheckItem, type ColorId, type Note } from './types';
-import { deleteForever, isEmptyNote, saveNote, setStatus } from './db';
+import { deleteForever, isEmptyNote, restoreState, saveNote, setStatus } from './db';
 import { $, debounce, esc, uid } from './lib/util';
 import { icon } from './lib/icons';
 import { DrawingBoard, PEN_COLORS, PEN_SIZES, drawingPreviewSvg } from './lib/draw';
@@ -42,15 +42,24 @@ const releaseUrls = () => {
   urls = [];
 };
 
+function showSaved(on: boolean) {
+  const el = document.getElementById('eSaved');
+  if (!el) return;
+  el.innerHTML = on ? `${icon('check', 'w-3.5 h-3.5', 3)}<span>محفوظة</span>` : '<span>جارٍ الحفظ…</span>';
+  el.classList.toggle('text-brand-600', on);
+}
+
 const save = debounce(async () => {
   if (current && dirty) {
     dirty = false;
     await saveNote(current);
   }
+  showSaved(true);
 }, 400);
 
 function touch() {
   dirty = true;
+  showSaved(false);
   save();
 }
 
@@ -197,6 +206,7 @@ function renderAll() {
 //  عرض الملاحظة
 // ============================================================
 function renderNote(n: Note) {
+  renderTop();
   $('#editorBody').onclick = null; // معالج وضع الرسم لا يجب أن يبقى بعد الخروج منه
   $('#editorBody').className = 'flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5';
   $('#editorBody').innerHTML = `
@@ -530,6 +540,7 @@ function renderDrawMode(n: Note) {
     `<button type="button" data-color="${c}" class="pen-color flex h-11 w-11 items-center justify-center" aria-label="لون القلم"><span class="block h-6 w-6 rounded-full border border-black/20" style="background:${c === 'ink' ? 'currentColor' : c}"></span></button>`;
 
   $('#editorFooter').style.display = 'none';
+  $('#editorTop').style.display = 'none';
   const root = $('#editorBody');
   root.className = 'flex min-h-0 flex-1 flex-col overflow-hidden p-3';
   root.innerHTML = `
@@ -615,6 +626,48 @@ function renderDrawMode(n: Note) {
 // ============================================================
 //  الشريط السفلي: + / اللون / تثبيت / أرشفة / حذف / تم
 // ============================================================
+
+/** الشريط العلوي: رجوع واحد يحفظ تلقائياً + تثبيت/أرشفة/حذف. */
+function renderTop() {
+  const n = current;
+  if (!n) return;
+  const t = $('#editorTop');
+  t.style.display = '';
+  t.innerHTML = `
+    <button type="button" id="eDone" class="btn-icon !h-12 !w-12 !rounded-full" title="رجوع (يُحفظ تلقائياً)" aria-label="رجوع">${icon('back', 'w-6 h-6')}</button>
+    <span class="flex-1"></span>
+    <button type="button" id="ePin" class="btn-icon !rounded-full ${n.pinned ? 'active' : ''}" title="تثبيت" aria-label="تثبيت">${icon('pin')}</button>
+    <button type="button" id="eArchive" class="btn-icon !rounded-full" title="${n.status === 'archived' ? 'إلغاء الأرشفة' : 'أرشفة'}" aria-label="أرشفة">${icon('archive')}</button>
+    <button type="button" id="eTrash" class="btn-icon !rounded-full hover:!text-red-500" title="نقل للمهملات" aria-label="نقل للمهملات">${icon('trash')}</button>`;
+  const f = t;
+  $('#ePin', f).onclick = () => {
+    n.pinned = !n.pinned;
+    touch();
+    renderTop();
+  };
+  $('#eDone', f).onclick = () => void closeEditor();
+
+  const leave = async (status: 'archived' | 'trashed' | 'active', msg: string) => {
+    const id = n.id;
+    const prev = { status: n.status, pinned: n.pinned };
+    n.status = status;
+    dirty = true;
+    await closeEditor();
+    await setStatus(id, status);
+    onSaved(id, true);
+    toast(msg, {
+      label: 'تراجع',
+      run: () => void restoreState(id, prev.status, prev.pinned).then(() => onSaved(id, true)),
+    });
+  };
+  $('#eArchive', f).onclick = () =>
+    void leave(
+      n.status === 'archived' ? 'active' : 'archived',
+      n.status === 'archived' ? 'أُعيدت من الأرشيف' : 'تمت الأرشفة',
+    );
+  $('#eTrash', f).onclick = () => void leave('trashed', 'نُقلت إلى المهملات');
+}
+
 function renderFooter() {
   const n = current;
   if (!n) return;
@@ -639,12 +692,7 @@ function renderFooter() {
       <button type="button" id="eAdd" class="btn-icon ${pop === 'add' ? 'active' : ''}" title="إضافة" aria-label="إضافة" aria-haspopup="menu" aria-expanded="${pop === 'add'}">${icon('plus')}</button>
       <button type="button" id="ePalette" class="btn-icon ${pop === 'color' ? 'active' : ''}" title="اللون" aria-label="اللون">${icon('palette')}</button>
     </div>
-    <div class="flex items-center gap-1">
-      <button type="button" id="ePin" class="btn-icon ${n.pinned ? 'active' : ''}" title="تثبيت" aria-label="تثبيت">${icon('pin')}</button>
-      <button type="button" id="eArchive" class="btn-icon" title="${n.status === 'archived' ? 'إلغاء الأرشفة' : 'أرشفة'}" aria-label="أرشفة">${icon('archive')}</button>
-      <button type="button" id="eTrash" class="btn-icon hover:!text-red-500" title="نقل للمهملات" aria-label="نقل للمهملات">${icon('trash')}</button>
-      <button type="button" id="eDone" class="btn-primary ms-1">تم</button>
-    </div>
+    <span id="eSaved" class="flex items-center gap-1 pe-3 text-xs text-slate-500 dark:text-slate-400"></span>
     ${pop === 'add' ? addMenu : pop === 'color' ? colorMenu : ''}`;
 
   $('#eAdd', f).onclick = () => {
@@ -679,26 +727,5 @@ function renderFooter() {
     };
   }
 
-  $('#ePin', f).onclick = () => {
-    n.pinned = !n.pinned;
-    touch();
-    renderFooter();
-  };
-  $('#eDone', f).onclick = () => void closeEditor();
-
-  const leave = async (status: 'archived' | 'trashed' | 'active', msg: string) => {
-    const id = n.id;
-    n.status = status;
-    dirty = true;
-    await closeEditor();
-    await setStatus(id, status);
-    onSaved(id, true);
-    toast(msg);
-  };
-  $('#eArchive', f).onclick = () =>
-    void leave(
-      n.status === 'archived' ? 'active' : 'archived',
-      n.status === 'archived' ? 'أُعيدت من الأرشيف' : 'تمت الأرشفة',
-    );
-  $('#eTrash', f).onclick = () => void leave('trashed', 'نُقلت إلى المهملات');
+  showSaved(!dirty);
 }

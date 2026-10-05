@@ -75,6 +75,11 @@ export async function setStatus(id: string, status: NoteStatus): Promise<void> {
   });
 }
 
+/** يعيد الحالة السابقة بالكامل (للتراجع): الحالة + التثبيت. */
+export async function restoreState(id: string, status: NoteStatus, pinned: boolean): Promise<void> {
+  await db.notes.update(id, { status, pinned, updatedAt: Date.now(), trashedAt: status === 'trashed' ? Date.now() : null });
+}
+
 export async function deleteForever(id: string): Promise<void> {
   await db.notes.delete(id);
 }
