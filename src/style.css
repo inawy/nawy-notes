@@ -12,6 +12,11 @@
   --color-brand-500: #3d7bff;
   --color-brand-600: #2b63e6;
   --color-brand-950: #12275a;
+  /* الوضع الليلي رمادي محايد بلا ميل للأزرق (يستبدل درجات slate الداكنة) */
+  --color-slate-700: #3a3a3c;
+  --color-slate-800: #2a2a2c;
+  --color-slate-900: #1c1c1e;
+  --color-slate-950: #121212;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --font-sans: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
   --shadow-card: 0 1px 3px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.06);
@@ -39,7 +44,7 @@
   }
   .menu-item { @apply flex min-h-11 w-full items-center gap-3 px-4 py-2 text-start text-sm hover:bg-slate-50 dark:hover:bg-slate-800; }
   .drawer-item, .tab { @apply flex min-h-12 w-full items-center gap-4 rounded-full px-4 text-start text-sm text-slate-700 transition hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800; }
-  .tab[aria-current='page'] { @apply bg-brand-50 font-medium text-brand-600 dark:bg-brand-950 dark:text-brand-300; }
+  .tab[aria-current='page'] { @apply bg-brand-50 font-medium text-brand-600 dark:bg-brand-500/20 dark:text-brand-300; }
 }
 
 /* زر التثبيت */
@@ -55,7 +60,7 @@
   position: fixed; z-index: 55; display: flex; align-items: center; gap: 0.5rem;
   inset-inline: 0.75rem; bottom: calc(5.5rem + env(safe-area-inset-bottom));
   max-width: 28rem; margin-inline: auto; padding: 0.5rem 0.75rem; border-radius: 0.875rem;
-  background: #1e293b; color: #fff; font-size: 0.875rem; box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.3);
+  background: #2a2a2c; color: #fff; font-size: 0.875rem; box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.3);
 }
 
 /* هوامش آمنة (notch / الحواف المنحنية) */
@@ -104,8 +109,8 @@ html[data-layout='list'] .notes-grid { --gap: 0.5rem; grid-template-columns: min
   --n-teal: #cdeee9; --n-blue: #dce8ff; --n-purple: #e8e0f8; --n-pink: #f9d9df; --n-gray: #e3e6eb;
 }
 .dark {
-  --n-default: #1e293b; --n-red: #7f1d1d; --n-orange: #9a3412; --n-yellow: #854d0e; --n-green: #14532d;
-  --n-teal: #134e4a; --n-blue: #1e3a8a; --n-purple: #581c87; --n-pink: #831843; --n-gray: #334155;
+  --n-default: #1f1f21; --n-red: #4a2c2c; --n-orange: #4a3626; --n-yellow: #463f22; --n-green: #263c2f;
+  --n-teal: #213c39; --n-blue: #28344d; --n-purple: #392d4d; --n-pink: #4a2d3b; --n-gray: #3a3a3c;
 }
 .nc-default { background: var(--n-default); --card-bg: var(--n-default); } .nc-red { background: var(--n-red); --card-bg: var(--n-red); }
 .nc-orange { background: var(--n-orange); --card-bg: var(--n-orange); } .nc-yellow { background: var(--n-yellow); --card-bg: var(--n-yellow); }
@@ -141,7 +146,7 @@ img { -webkit-user-drag: none; }
 
 /* خلفية على html نفسه: تملأ كل الشاشة بما فيها منطقة شريط التنقل السفلي */
 html { background-color: #f8fafc; min-height: 100%; }
-html.dark { background-color: #020617; }
+html.dark { background-color: #121212; }
 main { touch-action: pan-y; }
 .view-enter { animation: viewIn 0.2s var(--ease-out); }
 @keyframes viewIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

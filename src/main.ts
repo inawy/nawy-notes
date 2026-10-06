@@ -67,7 +67,7 @@ function syncToolbar() {
   const toGrid = layout === 'list';
   const layoutBtn = $('#btnLayout');
   layoutBtn.title = toGrid ? 'عرض شبكة' : 'عرض قائمة';
-  layoutBtn.innerHTML = icon(toGrid ? 'grid' : 'rows') + `<span>${layoutBtn.title}</span>`;
+  layoutBtn.innerHTML = icon(toGrid ? 'grid' : 'rows');
   layoutBtn.setAttribute('aria-label', layoutBtn.title);
   document.documentElement.dataset.layout = layout;
 
@@ -104,7 +104,7 @@ function toggleSortMenu(open?: boolean) {
 function syncTheme() {
   const dark = document.documentElement.classList.contains('dark');
   $('#btnTheme').innerHTML = icon(dark ? 'sun' : 'moon') + `<span>${dark ? 'الوضع النهاري' : 'الوضع الليلي'}</span>`;
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#020617' : '#f8fafc'); // لون الهيدر، فيمتزج شريط الحالة معه
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#121212' : '#f8fafc'); // لون الهيدر، فيمتزج شريط الحالة معه
 }
 
 // ---------- البطاقات ----------

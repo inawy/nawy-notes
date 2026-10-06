@@ -19,7 +19,7 @@
         var t = localStorage.getItem('nawy-note:theme');
         if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark');
-          document.querySelector('meta[name=theme-color]').setAttribute('content', '#020617');
+          document.querySelector('meta[name=theme-color]').setAttribute('content', '#121212');
         }
       } catch (e) {}
       // الشاشة تظهر عند أول فتح فقط؛ أي تحديث للصفحة لاحقاً يتخطاها قبل أن تُرسم
@@ -89,7 +89,7 @@
           var wait = visited ? 0 : Math.max(0, 700 - (Date.now() - t0));
           setTimeout(function () {
             sp.classList.add('out');
-            if (meta && prevColor) meta.setAttribute('content', document.documentElement.classList.contains('dark') ? '#020617' : '#f8fafc');
+            if (meta && prevColor) meta.setAttribute('content', document.documentElement.classList.contains('dark') ? '#121212' : '#f8fafc');
             setTimeout(function () { sp.remove(); }, 450);
           }, wait);
         }
@@ -126,6 +126,7 @@
           <button id="btnMenu" type="button" class="btn-icon ms-1 !rounded-full" aria-label="القائمة" aria-haspopup="dialog"></button>
           <input id="search" type="search" autocomplete="off" enterkeyhint="search" placeholder="ابحث في ملاحظاتك..."
             class="h-full min-w-0 flex-1 bg-transparent px-2 text-base outline-none placeholder:text-slate-400" />
+          <button id="btnLayout" type="button" class="btn-icon !rounded-full"></button>
           <button id="btnSort" type="button" class="btn-icon me-1 !rounded-full" aria-haspopup="menu" aria-expanded="false"></button>
           <div id="sortMenu" role="menu" class="modal-enter absolute end-0 top-full z-40 mt-2 hidden w-64 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"></div>
         </div>
@@ -142,7 +143,6 @@
         </div>
         <nav id="tabs" class="flex flex-col gap-1" aria-label="العروض"></nav>
         <div class="my-2 border-t border-slate-200/80 dark:border-slate-800"></div>
-        <button id="btnLayout" type="button" class="drawer-item"></button>
         <button id="btnTheme" type="button" class="drawer-item"></button>
         <button id="btnBackup" type="button" class="drawer-item"></button>
         <button id="btnInstall" type="button" hidden class="drawer-item !text-brand-600 dark:!text-brand-300"><span id="installIcon" aria-hidden="true"></span><span>تثبيت ناوي نوت</span></button>
