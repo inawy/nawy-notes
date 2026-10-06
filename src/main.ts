@@ -1,18 +1,23 @@
 import './style.css';
 import { liveQuery, type Subscription } from 'dexie';
 import Sortable from 'sortablejs';
-import { registerSW } from 'virtual:pwa-register';
 import type { Layout, Note, SortDir, SortMode, View } from './types';
 import {
-  db, deleteForever, getNote, emptyTrash, exportBackup, importBackup, listNotes, newNote, purgeOldTrash, reorderNotes, setStatus,
+  db, deleteForever, getNote, emptyTrash, listNotes, newNote, purgeOldTrash, reorderNotes, setStatus,
 } from './db';
 import { $, debounce } from './lib/util';
 import { icon } from './lib/icons';
 import { toast } from './lib/toast';
 import { appReady, dbMessage, reportError } from './lib/report';
-import { createInstaller, IOS_HELP, type InstallState } from './pwa/install';
 import { closeEditor, flushEditor, isEditorOpen, openEditor, setOnSaved } from './editor';
 import { cardHTML } from './views/card';
+import { mountBackup } from './features/backup';
+import { mountDrawer } from './features/drawer';
+import { handleLaunchIntent } from './features/launch';
+import { mountPwa } from './features/pwa';
+import { mountTabSwipe } from './features/tab-swipe';
+import { mountTheme, syncTheme } from './features/theme';
+import { preventNativeMenu } from './lib/app-feel';
 import { closeReader, isReaderOpen, openReader } from './reader';
 
 let view: View = 'notes';
@@ -99,12 +104,6 @@ function toggleSortMenu(open?: boolean) {
   if (on) renderSortMenu();
   menu.classList.toggle('hidden', !on);
   $('#btnSort').setAttribute('aria-expanded', String(on));
-}
-
-function syncTheme() {
-  const dark = document.documentElement.classList.contains('dark');
-  $('#btnTheme').innerHTML = icon(dark ? 'sun' : 'moon') + `<span>${dark ? 'الوضع النهاري' : 'الوضع الليلي'}</span>`;
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#121212' : '#f8fafc'); // لون الهيدر، فيمتزج شريط الحالة معه
 }
 
 // ---------- البطاقات ----------
@@ -288,14 +287,6 @@ function setView(v: View) {
   subscribe();
 }
 
-function download(blob: Blob, name: string) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-}
-
 function wire() {
   $('#btnSort').onclick = (e) => {
     e.stopPropagation();
@@ -332,55 +323,13 @@ function wire() {
     if (t) create(t);
   };
 
-  // سحب أفقي للتنقل بين التبويبات (RTL: السحب نحو اليمين = التبويب التالي)
-  let sx = 0, sy = 0, st = 0, tracking = false;
-  const main = document.querySelector('main')!;
-  main.addEventListener('touchstart', (e) => {
-    tracking = e.touches.length === 1 && !isEditorOpen() && !isReaderOpen() && !document.querySelector('.drag-chosen');
-    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
-  }, { passive: true });
-  main.addEventListener('touchend', (e) => {
-    if (!tracking) return;
-    tracking = false;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - sx, dy = t.clientY - sy;
-    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.2 || Date.now() - st > 600) return;
-    if (document.querySelector('.drag-chosen')) return;
-    const i = VIEW_ORDER.indexOf(view) + (dx > 0 ? 1 : -1);
-    if (i >= 0 && i < VIEW_ORDER.length) setView(VIEW_ORDER[i]);
-  }, { passive: true });
-
-  // قائمة المتصفح السياقية (نسخ/مشاركة) لا مكان لها في التطبيق إلا داخل حقول الكتابة
-  document.addEventListener('contextmenu', (e) => {
-    if (!(e.target as HTMLElement).closest('input, textarea, [contenteditable="true"]')) e.preventDefault();
-  });
-  const drawer = (on: boolean) => {
-    $('#drawerRoot').classList.toggle('hidden', !on);
-    $('#btnMenu').setAttribute('aria-expanded', String(on));
-  };
-  $('#btnMenu').onclick = () => { toggleSortMenu(false); drawer(true); };
-  $('#drawerBackdrop').onclick = () => drawer(false);
-  // سويب نحو حافة القائمة (اليمين في العربية) يغلقها
-  let dsx = 0, dsy = 0;
-  const root = $('#drawerRoot');
-  root.addEventListener('touchstart', (e) => { dsx = e.touches[0].clientX; dsy = e.touches[0].clientY; }, { passive: true });
-  root.addEventListener('touchend', (e) => {
-    const dx = e.changedTouches[0].clientX - dsx;
-    const dy = e.changedTouches[0].clientY - dsy;
-    const towardEdge = getComputedStyle(document.documentElement).direction === 'rtl' ? dx : -dx;
-    if (towardEdge > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) drawer(false);
-  }, { passive: true });
-  $('#drawer').addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('button')) drawer(false); });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') drawer(false); });
+  mountTabSwipe({ order: VIEW_ORDER, current: () => view, go: setView, blocked: () => isEditorOpen() || isReaderOpen() });
+  mountDrawer({ onOpen: () => toggleSortMenu(false) });
+  mountTheme();
+  preventNativeMenu();
   $('#tabs').onclick = (e) => {
     const v = (e.target as HTMLElement).closest<HTMLElement>('[data-view]')?.dataset.view as View | undefined;
     if (v) setView(v);
-  };
-
-  $('#btnTheme').onclick = () => {
-    const dark = document.documentElement.classList.toggle('dark');
-    try { localStorage.setItem('nawy-note:theme', dark ? 'dark' : 'light'); } catch { /* التخزين محجوب */ }
-    syncTheme();
   };
 
   $<HTMLInputElement>('#search').addEventListener(
@@ -427,25 +376,6 @@ function wire() {
     }
   };
 
-  // نسخ احتياطي: زر واحد يصدّر، ونقر مع Shift يستورد (وقائمة صغيرة عبر confirm للبساطة)
-  const file = $<HTMLInputElement>('#importFile');
-  $('#btnBackup').onclick = () => {
-    if (confirm('موافق = تصدير نسخة احتياطية\nإلغاء = استيراد نسخة من ملف')) {
-      void doBackup();
-    } else file.click();
-  };
-  file.onchange = async () => {
-    const f = file.files?.[0];
-    file.value = '';
-    if (!f) return;
-    try {
-      const n = await importBackup(await f.text());
-      toast(`تم استيراد ${n} ملاحظة`);
-    } catch (err) {
-      toast(err instanceof Error ? err.message : 'فشل الاستيراد');
-    }
-  };
-
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (isEditorOpen()) void closeEditor();
@@ -476,72 +406,9 @@ mountChrome();
 wire();
 subscribe();
 void purgeOldTrash();
+mountPwa();
+mountBackup();
 
-// ---------- تثبيت التطبيق (PWA) ----------
-const installer = createInstaller(window, (st: InstallState) => {
-  $('#btnInstall').hidden = st === 'hidden';
-});
-installer.refresh();
-$('#btnInstall').onclick = async () => {
-  const r = await installer.install();
-  if (r === 'ios-help') toast(IOS_HELP);
-  else if (r === 'accepted') toast('جارٍ تثبيت ناوي نوت…');
-};
-
-// ---------- التحديث: لا نعيد التحميل وسط الكتابة، المستخدم يقرر ----------
-const updateSW = registerSW({
-  immediate: true,
-  onNeedRefresh: () => ($('#updateBar').hidden = false),
-  onOfflineReady: () => toast('جاهز للعمل بدون إنترنت'),
-});
-$('#updateNow').onclick = async () => {
-  await flushEditor(); // لا يضيع شيء مما يُكتب
-  await updateSW(true);
-};
-$('#updateLater').onclick = () => (($('#updateBar').hidden = true));
-
-// تخزين دائم: يمنع المتصفح من مسح البيانات تحت ضغط المساحة
-void navigator.storage?.persist?.();
-
-// ---------- النسخ الاحتياطي + تذكير هادئ ----------
-const BK_LAST = 'nawy-note:last-backup';
-const BK_ASKED = 'nawy-note:backup-asked';
-const DAY = 86_400_000;
-async function doBackup() {
-  const b = await exportBackup();
-  download(b, `nawy-note-${new Date().toISOString().slice(0, 10)}.json`);
-  try { localStorage.setItem(BK_LAST, String(Date.now())); } catch { /* تجاهل */ }
-}
-/** البيانات محلية فقط؛ نذكّر مرة كل أسبوعين كحدّ أقصى إن مضى 30 يوماً بلا نسخة. */
-async function maybeRemindBackup() {
-  try {
-    const now = Date.now();
-    if (!localStorage.getItem(BK_ASKED)) { localStorage.setItem(BK_ASKED, String(now)); return; } // أول استخدام: ابدأ العدّ
-    const last = Number(localStorage.getItem(BK_LAST) ?? localStorage.getItem(BK_ASKED));
-    const asked = Number(localStorage.getItem(BK_ASKED));
-    if (now - last < 30 * DAY || now - asked < 14 * DAY) return;
-    if ((await db.notes.toArray()).length < 3) return;
-    localStorage.setItem(BK_ASKED, String(now));
-    toast('ملاحظاتك محفوظة على هذا الجهاز فقط. خذ نسخة احتياطية؟', { label: 'نسخ الآن', run: () => void doBackup() });
-  } catch { /* تجاهل */ }
-}
-setTimeout(() => void maybeRemindBackup(), 4000);
-
-// ---------- نقاط الدخول: اختصارات الأيقونة والمشاركة من تطبيقات أخرى ----------
-function handleLaunchIntent() {
-  const q = new URLSearchParams(location.search);
-  const kind = q.get('new');
-  const shared = [q.get('title'), q.get('text'), q.get('url')].filter(Boolean) as string[];
-  if (!kind && !shared.length) return;
-  history.replaceState(null, '', location.pathname + location.hash); // لا يتكرر عند التحديث
-  if (shared.length) {
-    const note = newNote('text');
-    note.title = shared.length > 1 ? shared[0] : '';
-    note.body = shared.slice(shared.length > 1 ? 1 : 0).join('\n');
-    openEditor(note, true);
-  } else if (kind === 'text' || kind === 'list') openEditor(newNote(kind), true);
-  else if (kind === 'audio' || kind === 'draw') openEditor(newNote('text'), true, kind);
-}
 handleLaunchIntent();
 
 appReady();
