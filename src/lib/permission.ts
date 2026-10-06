@@ -1,4 +1,5 @@
 import { esc } from './util';
+import { swipeDismiss } from './swipe-dismiss';
 import { isIOS, isStandalone } from '../pwa/install';
 
 /** خطوات تفعيل الميكروفون بحسب الجهاز (المتصفح لا يسمح بإعادة طلب الإذن بعد رفضه). */
@@ -46,6 +47,7 @@ export function showMicHelp(onRetry: () => void, onDeviceRecorder?: (capture: bo
     if (e.target === wrap) close();
   };
   document.body.appendChild(wrap);
+  swipeDismiss(wrap.firstElementChild as HTMLElement, close);
   wrap.querySelector<HTMLElement>('#micClose')!.onclick = close;
   wrap.querySelector<HTMLElement>('#micRetry')!.onclick = () => {
     close();
@@ -118,6 +120,7 @@ export function showMicIntro(onGo: () => void, onCancel: () => void): void {
     wrap.remove();
     onCancel();
   };
+  swipeDismiss(wrap.firstElementChild as HTMLElement, cancel);
   wrap.onclick = (e) => {
     if (e.target === wrap) cancel();
   };

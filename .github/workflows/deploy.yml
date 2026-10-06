@@ -2,6 +2,8 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -22,15 +24,16 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # بعد توليد package-lock.json وإضافته للمستودع، بدّل السطر التالي إلى: npm ci (وأعد cache: npm)
       - run: npm ci
-      - run: npm run build
+      - run: npm test # الاختبارات أولاً: فشلها يوقف النشر
+      - run: npm run build # يتضمن فحص الأنواع (tsc --noEmit)
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
     needs: build
+    if: github.event_name != 'pull_request' # الطلبات تُفحص فقط ولا تُنشر
     runs-on: ubuntu-latest
     environment:
       name: github-pages

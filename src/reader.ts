@@ -2,6 +2,7 @@ import type { Note } from './types';
 import { $, esc } from './lib/util';
 import { icon } from './lib/icons';
 import { drawingPreviewSvg } from './lib/draw';
+import { swipeDismiss } from './lib/swipe-dismiss';
 
 /**
  * وضع القراءة: النقر على بطاقة يفتح ورقة قراءة بلا لوحة مفاتيح.
@@ -10,6 +11,7 @@ import { drawingPreviewSvg } from './lib/draw';
 let isOpen = false;
 let hist = false;
 let urls: string[] = [];
+let wired = false;
 
 export function isReaderOpen(): boolean {
   return isOpen;
@@ -77,7 +79,9 @@ export function openReader(n: Note, onEdit: (n: Note) => void): void {
         : '';
 
   const when = new Date(n.updatedAt).toLocaleString('ar', { dateStyle: 'medium', timeStyle: 'short' });
-  $('#readerCard').className = `sheet-enter relative flex max-h-[92dvh] min-h-[50dvh] w-full flex-col overflow-hidden rounded-t-[26px] border border-black/5 sm:max-w-xl sm:rounded-3xl dark:border-white/10 nc-${n.color}`;
+  const card = $('#readerCard');
+  card.style.cssText = ''; // يزيل أثر سحب سابق
+  card.className = `sheet-enter relative flex max-h-[92dvh] min-h-[50dvh] w-full flex-col overflow-hidden rounded-t-[26px] border border-black/5 sm:max-w-xl sm:rounded-3xl dark:border-white/10 nc-${n.color}`;
   $('#readerBody').innerHTML = `
     <div class="flex shrink-0 items-center gap-1 px-2 pt-2">
       <button type="button" id="rClose" class="btn-icon !h-12 !w-12 !rounded-full" aria-label="إغلاق">${icon('x', 'w-6 h-6')}</button>
@@ -112,4 +116,8 @@ export function openReader(n: Note, onEdit: (n: Note) => void): void {
   el.onclick = (e) => {
     if (e.target === el) closeReader();
   };
+  if (!wired) {
+    wired = true;
+    swipeDismiss(card, () => closeReader(), () => document.getElementById('rContent'));
+  }
 }
