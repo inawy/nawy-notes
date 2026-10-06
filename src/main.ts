@@ -460,6 +460,16 @@ function wire() {
   };
   $('#btnMenu').onclick = () => { toggleSortMenu(false); drawer(true); };
   $('#drawerBackdrop').onclick = () => drawer(false);
+  // سويب نحو حافة القائمة (اليمين في العربية) يغلقها
+  let dsx = 0, dsy = 0;
+  const root = $('#drawerRoot');
+  root.addEventListener('touchstart', (e) => { dsx = e.touches[0].clientX; dsy = e.touches[0].clientY; }, { passive: true });
+  root.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - dsx;
+    const dy = e.changedTouches[0].clientY - dsy;
+    const towardEdge = getComputedStyle(document.documentElement).direction === 'rtl' ? dx : -dx;
+    if (towardEdge > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) drawer(false);
+  }, { passive: true });
   $('#drawer').addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('button')) drawer(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') drawer(false); });
   $('#tabs').onclick = (e) => {
@@ -481,10 +491,6 @@ function wire() {
     }, 180),
   );
 
-  const open = async (id: string) => {
-    const n = (await getNote(id)) ?? cache.get(id);
-    if (n) openEditor(n, false);
-  };
   const read = async (id: string) => {
     const n = (await getNote(id)) ?? cache.get(id);
     if (n) openReader(n, (x) => openEditor(x, false));
