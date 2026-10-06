@@ -103,3 +103,7 @@
 - `main.ts` 651 → 414 سطراً: `views/card.ts` (دالة نقية تأخذ سياقاً صريحاً) و`features/` (backup, pwa, drawer, tab-swipe, launch, theme) و`lib/app-feel.ts`. كل ميزة تُركَّب بدالة `mountX()` واحدة. المتبقي في main.ts: حالة العرض والاشتراك الحي والرسم والسحب. التالي: `state` مستقل ثم تقسيم editor.ts.
 - النوافذ السفلية (القراءة وشرح الميكروفون) تُغلق بالسحب لأسفل أو جانباً عبر `lib/swipe-dismiss.ts`.
 - ESLint/Prettier وVitest يحتاجان تحديث package-lock بـ npm؛ يُضافان من جهاز يعمل فيه npm.
+
+## تقسيم المحرر
+- `editor.ts` (730 سطراً) صار مجلد `editor/`: `session.ts` (كائن حالة واحد `st` + الحفظ التلقائي)، `viewport.ts` (لوحة المفاتيح وزر الرجوع)، `text.ts` (نص وقائمة)، `media.ts` (صور وتسجيل)، `draw-mode.ts`، `toolbar.ts` (الشريط العلوي والسفلي)، `index.ts` (فتح/إغلاق وتجميع).
+- الاعتماد الدائري بين الوحدات حُلّ بكائن `hooks` في `session.ts` تضبطه `index.ts`، فلا استيراد دائري.
