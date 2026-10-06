@@ -91,10 +91,10 @@ html[data-layout='list'] .notes-grid { --gap: 0.5rem; grid-template-columns: min
 
 .note-card {
   -webkit-touch-callout: none;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: border-color 0.15s ease; /* لا نحرّك transform: يتعارض مع حركة السحب */
 }
 @media (hover: hover) and (pointer: fine) {
-  .note-card:hover { transform: translateY(-2px); border-color: rgb(61 123 255 / 0.35); }
+  .note-card:hover { border-color: rgb(61 123 255 / 0.35); }
 }
 .note-card { overflow-wrap: anywhere; }
 
@@ -158,7 +158,7 @@ main { touch-action: pan-y; }
 .btn-icon:active, .btn-install:active { transform: scale(0.92); }
 .tab:active { transform: scale(0.96); }
 .btn-icon, .tab, .btn-install { transition: background-color 0.15s, color 0.15s, transform 0.12s var(--ease-out); }
-@media (hover: none) { .note-card:active { transform: scale(0.985); } }
+@media (hover: none) { .note-card:active { filter: brightness(0.97); } }
 
 .draw-surface {
   background-image: radial-gradient(rgb(100 116 139 / 0.25) 1px, transparent 1px);
@@ -167,7 +167,9 @@ main { touch-action: pan-y; }
 }
 
 /* حالات السحب (SortableJS) */
-.drag-chosen { box-shadow: 0 10px 25px -8px rgb(0 0 0 / 0.2); cursor: grabbing; }
+.drag-chosen { box-shadow: 0 14px 28px -10px rgb(0 0 0 / 0.28); cursor: grabbing; z-index: 5; }
+.note-card img { -webkit-user-drag: none; pointer-events: none; }
+.sortable-fallback { opacity: 0.95 !important; }
 .drag-ghost { opacity: 0.35; }
 
 @media (prefers-reduced-motion: reduce) {

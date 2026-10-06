@@ -275,16 +275,20 @@ function mountSortables() {
     if (!el.children.length) continue;
     sortables.push(
       Sortable.create(el, {
-        animation: 150,
-        delay: 220, // على اللمس: ضغطة مطوّلة للسحب حتى لا يتعارض مع التمرير
+        animation: 180,
+        easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+        delay: 130, // على اللمس: ضغطة قصيرة للسحب حتى لا يتعارض مع التمرير
         delayOnTouchOnly: true,
-        touchStartThreshold: 6,
+        touchStartThreshold: 12, // يسمح بارتجاف الإصبع قبل أن تبدأ الضغطة
+        fallbackTolerance: 3,
+        swapThreshold: 0.5,
         filter: 'audio, button, input, textarea, a',
         preventOnFilter: false,
         chosenClass: 'drag-chosen',
         ghostClass: 'drag-ghost',
         onStart: () => {
           dragging = true;
+          try { navigator.vibrate?.(8); } catch { /* غير مدعوم */ }
         },
         onEnd: (evt: { oldIndex?: number; newIndex?: number }) => {
           setTimeout(() => (dragging = false), 80); // يمنع نقرة "الإفلات" من فتح المحرر
@@ -444,7 +448,7 @@ function wire() {
     tracking = false;
     const t = e.changedTouches[0];
     const dx = t.clientX - sx, dy = t.clientY - sy;
-    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.6 || Date.now() - st > 700) return;
+    if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.2 || Date.now() - st > 600) return;
     if (document.querySelector('.drag-chosen')) return;
     const i = VIEW_ORDER.indexOf(view) + (dx > 0 ? 1 : -1);
     if (i >= 0 && i < VIEW_ORDER.length) setView(VIEW_ORDER[i]);
