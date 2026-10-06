@@ -78,7 +78,10 @@ export function parseEnvelope(text: string): { notes: Record<string, unknown>[];
 
   const valid = (notes as unknown[]).filter(
     (x): x is Record<string, unknown> =>
-      !!x && typeof x === 'object' && typeof (x as { id?: unknown }).id === 'string' && typeof (x as { updatedAt?: unknown }).updatedAt === 'number',
+      !!x &&
+      typeof x === 'object' &&
+      typeof (x as { id?: unknown }).id === 'string' &&
+      typeof (x as { updatedAt?: unknown }).updatedAt === 'number',
   );
   return { notes: valid, schemaVersion: version };
 }

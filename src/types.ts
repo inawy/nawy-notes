@@ -4,7 +4,16 @@ export type AttachmentKind = 'image' | 'audio' | 'draw';
 export type NoteStatus = 'active' | 'archived' | 'trashed';
 
 export const COLOR_IDS = [
-  'default', 'red', 'orange', 'yellow', 'green', 'teal', 'blue', 'purple', 'pink', 'gray',
+  'default',
+  'red',
+  'orange',
+  'yellow',
+  'green',
+  'teal',
+  'blue',
+  'purple',
+  'pink',
+  'gray',
 ] as const;
 export type ColorId = (typeof COLOR_IDS)[number];
 

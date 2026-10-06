@@ -3,7 +3,17 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SCHEMA_VERSION, buildEnvelope, normalizeNote, parseEnvelope, ImportError } from '../src/data/envelope.ts';
 
-const base = { title: '', body: '', items: [], color: 'default', pinned: false, status: 'active', createdAt: 1, updatedAt: 2, trashedAt: null };
+const base = {
+  title: '',
+  body: '',
+  items: [],
+  color: 'default',
+  pinned: false,
+  status: 'active',
+  createdAt: 1,
+  updatedAt: 2,
+  trashedAt: null,
+};
 const drawing = { width: 800, height: 600, strokes: [{ points: [[1, 1, 0.5]], color: 'ink', size: 5, pen: false }] };
 
 test('ترحيل: رسم قديم يصبح مرفق رسم', () => {
@@ -46,8 +56,20 @@ test('مغلف التصدير: شكل ناوي الموحّد', () => {
 
 test('تصدير ثم استيراد: ذهاب وعودة بلا فقد', () => {
   const notes = [
-    { ...base, id: 'n1', type: 'text', body: 'مرحبا', attachments: [{ id: 'q', kind: 'audio', blob: 'data:audio/webm;base64,AAAA', drawing: null }] },
-    { ...base, id: 'n2', type: 'list', items: [{ id: 'i', text: 'x', done: true }], attachments: [{ id: 'r', kind: 'draw', blob: null, drawing }] },
+    {
+      ...base,
+      id: 'n1',
+      type: 'text',
+      body: 'مرحبا',
+      attachments: [{ id: 'q', kind: 'audio', blob: 'data:audio/webm;base64,AAAA', drawing: null }],
+    },
+    {
+      ...base,
+      id: 'n2',
+      type: 'list',
+      items: [{ id: 'i', text: 'x', done: true }],
+      attachments: [{ id: 'r', kind: 'draw', blob: null, drawing }],
+    },
   ];
   const out = parseEnvelope(JSON.stringify(buildEnvelope(notes as never)));
   assert.equal(out.schemaVersion, SCHEMA_VERSION);
@@ -55,15 +77,28 @@ test('تصدير ثم استيراد: ذهاب وعودة بلا فقد', () => 
 });
 
 test('استيراد: الصيغتان القديمتان (nawy-note إصدار 1 و2) مقبولتان', () => {
-  const v1 = parseEnvelope(JSON.stringify({ app: 'nawy-note', version: 1, notes: [{ ...base, id: 'x', type: 'text' }] }));
+  const v1 = parseEnvelope(
+    JSON.stringify({ app: 'nawy-note', version: 1, notes: [{ ...base, id: 'x', type: 'text' }] }),
+  );
   assert.equal(v1.notes.length, 1);
-  const v2 = parseEnvelope(JSON.stringify({ app: 'nawy-note', version: 2, notes: [{ ...base, id: 'y', type: 'text', attachments: [] }] }));
+  const v2 = parseEnvelope(
+    JSON.stringify({ app: 'nawy-note', version: 2, notes: [{ ...base, id: 'y', type: 'text', attachments: [] }] }),
+  );
   assert.equal(v2.schemaVersion, 2);
 });
 
 test('استيراد: يرفض إصداراً أحدث برسالة واضحة', () => {
-  const file = JSON.stringify({ app: 'nawy', product: 'note', schemaVersion: SCHEMA_VERSION + 1, exportedAt: 'x', data: { notes: [] } });
-  assert.throws(() => parseEnvelope(file), (e: unknown) => e instanceof ImportError && /أحدث/.test((e as Error).message));
+  const file = JSON.stringify({
+    app: 'nawy',
+    product: 'note',
+    schemaVersion: SCHEMA_VERSION + 1,
+    exportedAt: 'x',
+    data: { notes: [] },
+  });
+  assert.throws(
+    () => parseEnvelope(file),
+    (e: unknown) => e instanceof ImportError && /أحدث/.test((e as Error).message),
+  );
   const legacy = JSON.stringify({ app: 'nawy-note', version: 99, notes: [] });
   assert.throws(() => parseEnvelope(legacy), ImportError);
 });
@@ -77,6 +112,13 @@ test('استيراد: يرفض JSON تالفاً وملفاً من تطبيق آ
 });
 
 test('استيراد: يتجاهل العناصر التالفة ويُبقي الصالحة', () => {
-  const file = JSON.stringify({ app: 'nawy', schemaVersion: 2, data: { notes: [null, 5, { id: 1 }, { id: 'ok', updatedAt: 3 }, { id: 'no-date' }] } });
-  assert.deepEqual(parseEnvelope(file).notes.map((n) => n.id), ['ok']);
+  const file = JSON.stringify({
+    app: 'nawy',
+    schemaVersion: 2,
+    data: { notes: [null, 5, { id: 1 }, { id: 'ok', updatedAt: 3 }, { id: 'no-date' }] },
+  });
+  assert.deepEqual(
+    parseEnvelope(file).notes.map((n) => n.id),
+    ['ok'],
+  );
 });

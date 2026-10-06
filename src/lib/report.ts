@@ -18,7 +18,8 @@ export function dbMessage(err: unknown): string {
   const msg = e?.inner?.message || e?.message || String(err);
   let hint = '';
   if (/Security|InvalidState|NotAllowed|Unknown|OpenFailed/i.test(name) || /denied|storage|not allowed/i.test(msg)) {
-    hint = ' — قد يمنع المتصفح التخزين المحلي (وضع التصفح الخاص، أو فتح الملف مباشرة من القرص). جرّب نافذة عادية، أو افتح التطبيق عبر رابط https أو localhost.';
+    hint =
+      ' — قد يمنع المتصفح التخزين المحلي (وضع التصفح الخاص، أو فتح الملف مباشرة من القرص). جرّب نافذة عادية، أو افتح التطبيق عبر رابط https أو localhost.';
   } else if (/Version/i.test(name)) {
     hint = ' — قاعدة البيانات أحدث من هذه النسخة؛ استخدم أحدث ملف.';
   }

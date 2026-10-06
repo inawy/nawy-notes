@@ -25,7 +25,7 @@ export function mountPwa(): void {
     await flushEditor(); // لا يضيع شيء مما يُكتب
     await updateSW(true);
   };
-  $('#updateLater').onclick = () => (($('#updateBar').hidden = true));
+  $('#updateLater').onclick = () => ($('#updateBar').hidden = true);
 
   // تخزين دائم: يمنع المتصفح من مسح البيانات تحت ضغط المساحة
   void navigator.storage?.persist?.();

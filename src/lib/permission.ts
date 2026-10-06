@@ -4,13 +4,33 @@ import { isIOS, isStandalone } from '../pwa/install';
 
 /** خطوات تفعيل الميكروفون بحسب الجهاز (المتصفح لا يسمح بإعادة طلب الإذن بعد رفضه). */
 export function micSteps(ua: string, installed: boolean, ios: boolean): string[] {
-  if (ios) return ['افتح «الإعدادات» في الجهاز', 'اختر Safari ثم «الميكروفون»', 'اختر «السؤال» أو «السماح» ثم عُد إلى ناوي نوت'];
+  if (ios)
+    return [
+      'افتح «الإعدادات» في الجهاز',
+      'اختر Safari ثم «الميكروفون»',
+      'اختر «السؤال» أو «السماح» ثم عُد إلى ناوي نوت',
+    ];
   if (/Android/i.test(ua)) {
     return installed
-      ? ['افتح متصفح Chrome ثم ⋮ ثم «الإعدادات» ثم «إعدادات الموقع» ثم «الميكروفون»', 'ابحث عن موقع ناوي نوت (inawy.github.io) واختر «سماح»', 'أو من معلومات التطبيق اختر «إعادة ضبط الأذونات» (لا تختر «مسح البيانات» فهو يحذف ملاحظاتك)', 'إن بقي الأمر كما هو: إعدادات الهاتف ثم «التطبيقات» ثم Chrome ثم «الأذونات» ثم «الميكروفون» ثم «السماح»', 'عُد إلى ناوي نوت']
-      : ['اضغط أيقونة القفل 🔒 بجوار عنوان الموقع', 'اختر «الأذونات» ثم «الميكروفون» ثم «سماح»', 'إن بقي الأمر كما هو: إعدادات الهاتف ثم «التطبيقات» ثم Chrome ثم «الأذونات» ثم «الميكروفون» ثم «السماح»', 'عُد هنا واضغط «إعادة المحاولة»'];
+      ? [
+          'افتح متصفح Chrome ثم ⋮ ثم «الإعدادات» ثم «إعدادات الموقع» ثم «الميكروفون»',
+          'ابحث عن موقع ناوي نوت (inawy.github.io) واختر «سماح»',
+          'أو من معلومات التطبيق اختر «إعادة ضبط الأذونات» (لا تختر «مسح البيانات» فهو يحذف ملاحظاتك)',
+          'إن بقي الأمر كما هو: إعدادات الهاتف ثم «التطبيقات» ثم Chrome ثم «الأذونات» ثم «الميكروفون» ثم «السماح»',
+          'عُد إلى ناوي نوت',
+        ]
+      : [
+          'اضغط أيقونة القفل 🔒 بجوار عنوان الموقع',
+          'اختر «الأذونات» ثم «الميكروفون» ثم «سماح»',
+          'إن بقي الأمر كما هو: إعدادات الهاتف ثم «التطبيقات» ثم Chrome ثم «الأذونات» ثم «الميكروفون» ثم «السماح»',
+          'عُد هنا واضغط «إعادة المحاولة»',
+        ];
   }
-  return ['اضغط أيقونة القفل 🔒 بجوار عنوان الموقع', 'فعّل «الميكروفون» (سماح)', 'اضغط «إعادة المحاولة» (وقد تحتاج لتحديث الصفحة)'];
+  return [
+    'اضغط أيقونة القفل 🔒 بجوار عنوان الموقع',
+    'فعّل «الميكروفون» (سماح)',
+    'اضغط «إعادة المحاولة» (وقد تحتاج لتحديث الصفحة)',
+  ];
 }
 
 /** نافذة سفلية تشرح كيف يُفعَّل الميكروفون وتتيح إعادة المحاولة. */
@@ -31,12 +51,16 @@ export function showMicHelp(onRetry: () => void, onDeviceRecorder?: (capture: bo
         <button type="button" id="micRetry" class="btn-primary flex-1">إعادة المحاولة</button>
         <button type="button" id="micClose" class="btn-icon flex-1 !text-slate-600 dark:!text-slate-300">إغلاق</button>
       </div>
-      ${onDeviceRecorder ? `<p class="mb-1 mt-4 text-xs text-slate-400">بدائل بلا إذن الميكروفون:</p>
+      ${
+        onDeviceRecorder
+          ? `<p class="mb-1 mt-4 text-xs text-slate-400">بدائل بلا إذن الميكروفون:</p>
       <div class="flex gap-2">
         <button type="button" id="micDevice" class="min-h-11 flex-1 rounded-xl border border-slate-200 px-3 text-sm font-medium dark:border-slate-700">مسجّل الجهاز</button>
         <button type="button" id="micFile" class="min-h-11 flex-1 rounded-xl border border-slate-200 px-3 text-sm font-medium dark:border-slate-700">اختيار ملف صوتي</button>
       </div>
-      <p class="mt-1 text-xs text-slate-400">«مسجّل الجهاز» يعمل فقط إن كان في هاتفك تطبيق تسجيل يدعمه؛ وإلا سجّل من تطبيق التسجيل ثم اختر الملف.</p>` : ''}
+      <p class="mt-1 text-xs text-slate-400">«مسجّل الجهاز» يعمل فقط إن كان في هاتفك تطبيق تسجيل يدعمه؛ وإلا سجّل من تطبيق التسجيل ثم اختر الملف.</p>`
+          : ''
+      }
     </div>`;
   let perm: PermissionStatus | null = null;
   const close = () => {
@@ -54,23 +78,32 @@ export function showMicHelp(onRetry: () => void, onDeviceRecorder?: (capture: bo
     onRetry(); // نقرة مستخدم جديدة: شرط ظهور نافذة الإذن إن كانت الحالة "prompt"
   };
   wrap.querySelector<HTMLElement>('#micRetry')!.focus();
-  for (const [id, capture] of [['#micDevice', true], ['#micFile', false]] as const) {
+  for (const [id, capture] of [
+    ['#micDevice', true],
+    ['#micFile', false],
+  ] as const) {
     const btn = wrap.querySelector<HTMLElement>(id);
-    if (btn) btn.onclick = () => {
-      close();
-      onDeviceRecorder?.(capture); // داخل نقرة المستخدم: شرط فتح المسجّل/منتقي الملفات
-    };
+    if (btn)
+      btn.onclick = () => {
+        close();
+        onDeviceRecorder?.(capture); // داخل نقرة المستخدم: شرط فتح المسجّل/منتقي الملفات
+      };
   }
   // عندما يفعّل المستخدم الإذن من الإعدادات ويعود، نكمل تلقائياً بلا نقرة إضافية
-  void navigator.permissions?.query({ name: 'microphone' as PermissionName }).then((st) => {
-    perm = st;
-    st.onchange = () => {
-      if (st.state === 'granted' && wrap.isConnected) {
-        close();
-        onRetry();
-      }
-    };
-  }).catch(() => { /* المتصفح لا يدعم استعلام الإذن: يبقى زر إعادة المحاولة */ });
+  void navigator.permissions
+    ?.query({ name: 'microphone' as PermissionName })
+    .then((st) => {
+      perm = st;
+      st.onchange = () => {
+        if (st.state === 'granted' && wrap.isConnected) {
+          close();
+          onRetry();
+        }
+      };
+    })
+    .catch(() => {
+      /* المتصفح لا يدعم استعلام الإذن: يبقى زر إعادة المحاولة */
+    });
 }
 
 export type MicState = 'granted' | 'prompt' | 'denied' | 'unknown';
@@ -94,7 +127,9 @@ export function needsMicIntro(st: MicState): boolean {
   try {
     if (localStorage.getItem(INTRO_KEY)) return false;
     localStorage.setItem(INTRO_KEY, '1');
-  } catch { /* التخزين محجوب: نعرضه */ }
+  } catch {
+    /* التخزين محجوب: نعرضه */
+  }
   return true;
 }
 

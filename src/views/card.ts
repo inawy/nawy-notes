@@ -90,7 +90,8 @@ export function cardHTML(n: Note, ctx: CardContext): string {
   } else {
     let content = '';
     if (n.type === 'text') {
-      if (n.body) content = `<p class="clamp-5 whitespace-pre-wrap break-words text-[13px] leading-[1.65] opacity-80">${esc(n.body.slice(0, 260))}</p>`;
+      if (n.body)
+        content = `<p class="clamp-5 whitespace-pre-wrap break-words text-[13px] leading-[1.65] opacity-80">${esc(n.body.slice(0, 260))}</p>`;
     } else {
       const all = n.items.filter((i) => i.text.trim());
       const shown = all.slice(0, 4);
@@ -107,7 +108,8 @@ export function cardHTML(n: Note, ctx: CardContext): string {
         (more > 0 ? `<li class="mt-0.5 text-[11px] opacity-60">+ ${more} عناصر أخرى</li>` : '') +
         `</ul>`;
     }
-    if (!content && !n.title && audios.length) content = `<div class="mt-6 flex justify-center opacity-70">${icon('mic', 'w-10 h-10', 1.6)}</div>`;
+    if (!content && !n.title && audios.length)
+      content = `<div class="mt-6 flex justify-center opacity-70">${icon('mic', 'w-10 h-10', 1.6)}</div>`;
     inner = `<div class="p-3 ${n.pinned ? 'pe-7' : ''}">${
       n.title ? `<h3 class="clamp-2 mb-1 break-words text-[15px] font-semibold leading-snug">${esc(n.title)}</h3>` : ''
     }${content}</div><div class="card-fade pointer-events-none absolute inset-x-0 bottom-0 h-9"></div>${chipRow}`;
@@ -117,4 +119,3 @@ export function cardHTML(n: Note, ctx: CardContext): string {
     <div class="relative min-h-0 flex-1 overflow-hidden">${pin}${inner}</div>${actions}
   </article>`;
 }
-

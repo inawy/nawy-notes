@@ -6,9 +6,12 @@ const DIST = 100; // px
 const FLICK = 0.6; // px/ms
 
 export function swipeDismiss(el: HTMLElement, onDismiss: () => void, scroller?: () => HTMLElement | null): void {
-  let sx = 0, sy = 0, st = 0;
+  let sx = 0,
+    sy = 0,
+    st = 0;
   let axis: 'x' | 'y' | 'none' | null = null;
-  let dx = 0, dy = 0;
+  let dx = 0,
+    dy = 0;
 
   const apply = (x: number, y: number, animate: boolean) => {
     el.style.transition = animate ? 'transform .22s cubic-bezier(.2,.8,.2,1), opacity .22s' : 'none';
@@ -17,33 +20,56 @@ export function swipeDismiss(el: HTMLElement, onDismiss: () => void, scroller?: 
     el.style.opacity = String(Math.max(0.35, 1 - far / 400));
   };
 
-  el.addEventListener('touchstart', (e) => {
-    if (e.touches.length !== 1) { axis = 'none'; return; }
-    const t = e.touches[0];
-    sx = t.clientX; sy = t.clientY; st = Date.now();
-    axis = null; dx = dy = 0;
-    el.style.animation = 'none'; // لا تتعارض حركة الدخول مع التتبع
-  }, { passive: true });
+  el.addEventListener(
+    'touchstart',
+    (e) => {
+      if (e.touches.length !== 1) {
+        axis = 'none';
+        return;
+      }
+      const t = e.touches[0];
+      sx = t.clientX;
+      sy = t.clientY;
+      st = Date.now();
+      axis = null;
+      dx = dy = 0;
+      el.style.animation = 'none'; // لا تتعارض حركة الدخول مع التتبع
+    },
+    { passive: true },
+  );
 
-  el.addEventListener('touchmove', (e) => {
-    if (axis === 'none') return;
-    const t = e.touches[0];
-    dx = t.clientX - sx;
-    dy = t.clientY - sy;
-    if (axis === null) {
-      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-      const target = e.target as HTMLElement;
-      if (target.closest('audio, input, textarea, canvas')) { axis = 'none'; return; }
-      if (Math.abs(dx) > Math.abs(dy) * 1.2) axis = 'x';
-      else if (dy > 0 && (scroller?.()?.scrollTop ?? 0) <= 0) axis = 'y';
-      else { axis = 'none'; return; }
-    }
-    if (e.cancelable) e.preventDefault(); // يمنع التمرير/التحديث بالسحب أثناء التتبع
-    apply(axis === 'x' ? dx : 0, axis === 'y' ? Math.max(0, dy) : 0, false);
-  }, { passive: false });
+  el.addEventListener(
+    'touchmove',
+    (e) => {
+      if (axis === 'none') return;
+      const t = e.touches[0];
+      dx = t.clientX - sx;
+      dy = t.clientY - sy;
+      if (axis === null) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        const target = e.target as HTMLElement;
+        if (target.closest('audio, input, textarea, canvas')) {
+          axis = 'none';
+          return;
+        }
+        if (Math.abs(dx) > Math.abs(dy) * 1.2) axis = 'x';
+        else if (dy > 0 && (scroller?.()?.scrollTop ?? 0) <= 0) axis = 'y';
+        else {
+          axis = 'none';
+          return;
+        }
+      }
+      if (e.cancelable) e.preventDefault(); // يمنع التمرير/التحديث بالسحب أثناء التتبع
+      apply(axis === 'x' ? dx : 0, axis === 'y' ? Math.max(0, dy) : 0, false);
+    },
+    { passive: false },
+  );
 
   const end = () => {
-    if (axis !== 'x' && axis !== 'y') { axis = null; return; }
+    if (axis !== 'x' && axis !== 'y') {
+      axis = null;
+      return;
+    }
     const d = axis === 'x' ? Math.abs(dx) : dy;
     const v = d / Math.max(1, Date.now() - st);
     const go = d > DIST || (d > 30 && v > FLICK);
@@ -56,5 +82,8 @@ export function swipeDismiss(el: HTMLElement, onDismiss: () => void, scroller?: 
     axis = null;
   };
   el.addEventListener('touchend', end);
-  el.addEventListener('touchcancel', () => { apply(0, 0, true); axis = null; });
+  el.addEventListener('touchcancel', () => {
+    apply(0, 0, true);
+    axis = null;
+  });
 }

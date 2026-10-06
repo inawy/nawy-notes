@@ -3,7 +3,15 @@ import { liveQuery, type Subscription } from 'dexie';
 import Sortable from 'sortablejs';
 import type { Layout, Note, SortDir, SortMode, View } from './types';
 import {
-  db, deleteForever, getNote, emptyTrash, listNotes, newNote, purgeOldTrash, reorderNotes, setStatus,
+  db,
+  deleteForever,
+  getNote,
+  emptyTrash,
+  listNotes,
+  newNote,
+  purgeOldTrash,
+  reorderNotes,
+  setStatus,
 } from './db';
 import { $, debounce } from './lib/util';
 import { icon } from './lib/icons';
@@ -41,7 +49,10 @@ function mountChrome() {
   syncToolbar();
   $('#emptyIcon').innerHTML = icon('notes', 'w-10 h-10');
   $('#tabs').innerHTML = (Object.keys(VIEW_LABEL) as View[])
-    .map((v) => `<button type="button" class="tab" data-view="${v}">${icon(VIEW_ICON[v])}<span>${VIEW_LABEL[v]}</span></button>`)
+    .map(
+      (v) =>
+        `<button type="button" class="tab" data-view="${v}">${icon(VIEW_ICON[v])}<span>${VIEW_LABEL[v]}</span></button>`,
+    )
     .join('');
   syncTheme();
 }
@@ -55,11 +66,17 @@ function loadPrefs() {
     if (p.sort === 'manual' || p.sort === 'created' || p.sort === 'updated') sortMode = p.sort;
     if (p.dir === 'asc' || p.dir === 'desc') sortDir = p.dir;
     if (p.layout === 'grid' || p.layout === 'list') layout = p.layout;
-  } catch { /* التخزين محجوب أو تالف: نستخدم الافتراضي */ }
+  } catch {
+    /* التخزين محجوب أو تالف: نستخدم الافتراضي */
+  }
 }
 
 function savePrefs() {
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ sort: sortMode, dir: sortDir, layout })); } catch { /* تجاهل */ }
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ sort: sortMode, dir: sortDir, layout }));
+  } catch {
+    /* تجاهل */
+  }
 }
 
 const SORT_OPTIONS: { id: SortMode; label: string }[] = [
@@ -84,17 +101,26 @@ function syncToolbar() {
 }
 
 function renderSortMenu() {
-  const check = (on: boolean) => `<span class="flex w-4 justify-center text-brand-500">${on ? icon('check', 'w-4 h-4', 3) : ''}</span>`;
+  const check = (on: boolean) =>
+    `<span class="flex w-4 justify-center text-brand-500">${on ? icon('check', 'w-4 h-4', 3) : ''}</span>`;
   const dirs: { id: SortDir; label: string }[] = [
     { id: 'desc', label: 'الأحدث أولاً' },
     { id: 'asc', label: 'الأقدم أولاً' },
   ];
   $('#sortMenu').innerHTML =
-    SORT_OPTIONS.map((o) => `<button type="button" role="menuitemradio" aria-checked="${sortMode === o.id}" data-sort="${o.id}" class="menu-item">${check(sortMode === o.id)}${o.label}</button>`).join('') +
+    SORT_OPTIONS.map(
+      (o) =>
+        `<button type="button" role="menuitemradio" aria-checked="${sortMode === o.id}" data-sort="${o.id}" class="menu-item">${check(sortMode === o.id)}${o.label}</button>`,
+    ).join('') +
     (sortMode === 'manual'
       ? `<p class="px-3 py-2 text-xs text-slate-400">اسحب البطاقات لإعادة ترتيبها.</p>`
       : `<div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>` +
-        dirs.map((d) => `<button type="button" role="menuitemradio" aria-checked="${sortDir === d.id}" data-dir="${d.id}" class="menu-item">${check(sortDir === d.id)}${d.label}</button>`).join('') +
+        dirs
+          .map(
+            (d) =>
+              `<button type="button" role="menuitemradio" aria-checked="${sortDir === d.id}" data-dir="${d.id}" class="menu-item">${check(sortDir === d.id)}${d.label}</button>`,
+          )
+          .join('') +
         `<p class="px-3 py-2 text-xs text-slate-400">السحب لإعادة الترتيب متاح في الترتيب اليدوي فقط.</p>`);
 }
 
@@ -183,7 +209,11 @@ function mountSortables() {
         ghostClass: 'drag-ghost',
         onStart: () => {
           dragging = true;
-          try { navigator.vibrate?.(8); } catch { /* غير مدعوم */ }
+          try {
+            navigator.vibrate?.(8);
+          } catch {
+            /* غير مدعوم */
+          }
         },
         onEnd: (evt: { oldIndex?: number; newIndex?: number }) => {
           setTimeout(() => (dragging = false), 80); // يمنع نقرة "الإفلات" من فتح المحرر
@@ -227,7 +257,9 @@ async function afterSave(id: string, expectPresent: boolean) {
   try {
     const n = await getNote(id);
     if (expectPresent && !n) {
-      return reportError('الحفظ لم يُسجَّل في قاعدة البيانات رغم عدم ظهور خطأ. جرّب متصفحاً آخر أو افتح التطبيق عبر https/localhost.');
+      return reportError(
+        'الحفظ لم يُسجَّل في قاعدة البيانات رغم عدم ظهور خطأ. جرّب متصفحاً آخر أو افتح التطبيق عبر https/localhost.',
+      );
     }
     const visible = n && n.status === VIEW_STATUS[view] && !query;
     if (visible && !document.querySelector(`.note-card[data-id="${id}"]`)) {
@@ -249,7 +281,8 @@ const FAB_ITEMS: { type: FabAction; label: string; icon: Parameters<typeof icon>
 ];
 
 function mountFab() {
-  $('#fab').innerHTML = `<span id="fabIcon" class="transition-transform duration-200">${icon('plus', 'w-7 h-7', 2.5)}</span>`;
+  $('#fab').innerHTML =
+    `<span id="fabIcon" class="transition-transform duration-200">${icon('plus', 'w-7 h-7', 2.5)}</span>`;
   $('#fabMenu').innerHTML = FAB_ITEMS.map(
     (i) => `<button type="button" data-type="${i.type}" class="flex items-center gap-3">
       <span class="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-medium dark:border-slate-700 dark:bg-slate-800">${i.label}</span>
@@ -323,7 +356,12 @@ function wire() {
     if (t) create(t);
   };
 
-  mountTabSwipe({ order: VIEW_ORDER, current: () => view, go: setView, blocked: () => isEditorOpen() || isReaderOpen() });
+  mountTabSwipe({
+    order: VIEW_ORDER,
+    current: () => view,
+    go: setView,
+    blocked: () => isEditorOpen() || isReaderOpen(),
+  });
   mountDrawer({ onOpen: () => toggleSortMenu(false) });
   mountTheme();
   preventNativeMenu();

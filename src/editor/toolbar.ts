@@ -114,4 +114,3 @@ export function renderFooter() {
 
   showSaved(!st.dirty);
 }
-

@@ -12,7 +12,8 @@ import { startDrawing } from './draw-mode';
 // ============================================================
 //  المرفقات: صور / رسوم / تسجيلات
 // ============================================================
-export const fmtTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+export const fmtTime = (s: number) =>
+  `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
 export const rmBtn = (id: string, cls = 'absolute end-2 top-2 bg-black/55 text-white') =>
   `<button type="button" data-rm="${id}" class="${cls} flex h-7 w-7 items-center justify-center rounded-full" aria-label="حذف">${icon('x', 'w-4 h-4')}</button>`;
@@ -102,7 +103,10 @@ export async function addDeviceRecording(capture: boolean) {
 }
 
 export function micHelp() {
-  showMicHelp(() => void startRecording(), (capture) => void addDeviceRecording(capture)); // يبقى المحرر مفتوحاً
+  showMicHelp(
+    () => void startRecording(),
+    (capture) => void addDeviceRecording(capture),
+  ); // يبقى المحرر مفتوحاً
 }
 
 export async function startRecording(skipIntro = false) {
@@ -160,4 +164,3 @@ export async function stopRecording(keep: boolean) {
   } else r.cancel();
   renderMedia();
 }
-

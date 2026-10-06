@@ -121,7 +121,6 @@ export function renderNote(n: Note) {
   renderFooter();
 }
 
-
 // ربط الدوال التي تحتاجها الوحدات الأخرى دون استيراد دائري
 hooks.renderAll = renderAll;
 hooks.renderNote = renderNote;

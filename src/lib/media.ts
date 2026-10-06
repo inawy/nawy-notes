@@ -76,7 +76,9 @@ export class VoiceRecorder {
     if (this.rec) this.rec.onstop = null;
     try {
       if (this.rec && this.rec.state !== 'inactive') this.rec.stop();
-    } catch { /* انتهى أصلاً */ }
+    } catch {
+      /* انتهى أصلاً */
+    }
     this.release();
   }
 

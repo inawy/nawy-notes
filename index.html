@@ -24,28 +24,85 @@
       } catch (e) {}
       // الشاشة تظهر عند أول فتح فقط؛ أي تحديث للصفحة لاحقاً يتخطاها قبل أن تُرسم
       try {
-        if (sessionStorage.getItem('nawy-note:splash')) { window.__nawySeen = true; document.documentElement.classList.add('no-splash'); }
-        else sessionStorage.setItem('nawy-note:splash', '1');
+        if (sessionStorage.getItem('nawy-note:splash')) {
+          window.__nawySeen = true;
+          document.documentElement.classList.add('no-splash');
+        } else sessionStorage.setItem('nawy-note:splash', '1');
       } catch (e) {}
     </script>
     <style>
-      .no-splash #splash{display:none!important}
+      .no-splash #splash {
+        display: none !important;
+      }
       /* شاشة البداية: بلون الأيقونة، أيقونة ثابتة بلا حركة، وتظهر في أول فتح فقط */
-      #splash{position:fixed;inset:0;z-index:90;background:#3d7bff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .4s ease,visibility .4s}
-      #splash.out{opacity:0;visibility:hidden;pointer-events:none}
-      #splash svg{width:min(46vw,200px);height:auto;overflow:visible}
-      #splash .sp-name{color:#fff;font:600 20px/1 'IBM Plex Sans Arabic','Segoe UI',Tahoma,system-ui,sans-serif;letter-spacing:.2px}
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 90;
+        background: #3d7bff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        transition:
+          opacity 0.4s ease,
+          visibility 0.4s;
+      }
+      #splash.out {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      #splash svg {
+        width: min(46vw, 200px);
+        height: auto;
+        overflow: visible;
+      }
+      #splash .sp-name {
+        color: #fff;
+        font:
+          600 20px/1 'IBM Plex Sans Arabic',
+          'Segoe UI',
+          Tahoma,
+          system-ui,
+          sans-serif;
+        letter-spacing: 0.2px;
+      }
     </style>
   </head>
   <body class="min-h-dvh overflow-x-hidden bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
     <div id="splash" aria-hidden="true">
       <svg viewBox="212 162 600 700" xmlns="http://www.w3.org/2000/svg">
-        <g class="sp-page"><g transform="translate(512 512) scale(1.12) translate(-512 -512)">
-          <path d="M350 212H674Q762 212 762 300V672L630 812H350Q262 812 262 724V300Q262 212 350 212Z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
-          <path class="sp-fold" d="M638 684H744L638 790Z" fill="#BFD3FF" stroke="#BFD3FF" stroke-width="20" stroke-linejoin="round"/>
-          <circle class="sp-dot" cx="410" cy="500" r="58" fill="#3D7BFF"/>
-          <path class="sp-check" d="M522 498L568 542L662 436" fill="none" stroke="#3D7BFF" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
-        </g></g>
+        <g class="sp-page">
+          <g transform="translate(512 512) scale(1.12) translate(-512 -512)">
+            <path
+              d="M350 212H674Q762 212 762 300V672L630 812H350Q262 812 262 724V300Q262 212 350 212Z"
+              fill="#fff"
+              stroke="#fff"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <path
+              class="sp-fold"
+              d="M638 684H744L638 790Z"
+              fill="#BFD3FF"
+              stroke="#BFD3FF"
+              stroke-width="20"
+              stroke-linejoin="round"
+            />
+            <circle class="sp-dot" cx="410" cy="500" r="58" fill="#3D7BFF" />
+            <path
+              class="sp-check"
+              d="M522 498L568 542L662 436"
+              fill="none"
+              stroke="#3D7BFF"
+              stroke-width="42"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </g>
+        </g>
       </svg>
       <div class="sp-name">ناوي نوت</div>
     </div>
@@ -59,12 +116,16 @@
           b = document.createElement('div');
           b.id = 'fatal';
           b.setAttribute('role', 'alert');
-          b.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:100;background:#b91c1c;color:#fff;padding:12px 16px;font:14px/1.7 Tahoma,system-ui,sans-serif;max-height:50dvh;overflow:auto;direction:rtl';
+          b.style.cssText =
+            'position:fixed;left:0;right:0;top:0;z-index:100;background:#b91c1c;color:#fff;padding:12px 16px;font:14px/1.7 Tahoma,system-ui,sans-serif;max-height:50dvh;overflow:auto;direction:rtl';
           b.innerHTML = '<strong>تعذّر تشغيل التطبيق بشكل سليم</strong><div id="fatalList"></div>';
           var x = document.createElement('button');
           x.textContent = 'إغلاق';
-          x.style.cssText = 'margin-top:6px;background:#fff;color:#b91c1c;border:0;border-radius:8px;padding:4px 12px;cursor:pointer';
-          x.onclick = function () { b.remove(); };
+          x.style.cssText =
+            'margin-top:6px;background:#fff;color:#b91c1c;border:0;border-radius:8px;padding:4px 12px;cursor:pointer';
+          x.onclick = function () {
+            b.remove();
+          };
           b.appendChild(x);
           document.body.appendChild(b);
           return b;
@@ -73,7 +134,10 @@
           msg = String(msg);
           if (seen[msg]) return;
           seen[msg] = 1;
-          var spl = document.getElementById('splash'); if (spl) { spl.classList.add('out'); }
+          var spl = document.getElementById('splash');
+          if (spl) {
+            spl.classList.add('out');
+          }
           var p = document.createElement('p');
           p.style.margin = '4px 0';
           p.textContent = msg;
@@ -81,7 +145,10 @@
           box().querySelector('#fatalList').appendChild(p);
         }
         // شاشة البداية: تبقى مدة كافية لتكتمل الحركة في أول فتح، وتختفي فوراً تقريباً في الفتحات التالية
-        var t0 = Date.now(), meta = document.querySelector('meta[name=theme-color]'), prevColor = meta && meta.getAttribute('content'), visited = !!window.__nawySeen;
+        var t0 = Date.now(),
+          meta = document.querySelector('meta[name=theme-color]'),
+          prevColor = meta && meta.getAttribute('content'),
+          visited = !!window.__nawySeen;
         if (meta && !visited) meta.setAttribute('content', '#3d7bff');
         function hideSplash() {
           var sp = document.getElementById('splash');
@@ -89,8 +156,11 @@
           var wait = visited ? 0 : Math.max(0, 700 - (Date.now() - t0));
           setTimeout(function () {
             sp.classList.add('out');
-            if (meta && prevColor) meta.setAttribute('content', document.documentElement.classList.contains('dark') ? '#121212' : '#f8fafc');
-            setTimeout(function () { sp.remove(); }, 450);
+            if (meta && prevColor)
+              meta.setAttribute('content', document.documentElement.classList.contains('dark') ? '#121212' : '#f8fafc');
+            setTimeout(function () {
+              sp.remove();
+            }, 450);
           }, wait);
         }
         window.__nawyReport = report;
@@ -99,36 +169,71 @@
           hideSplash();
           var b = document.getElementById('fatal');
           if (!b) return;
-          b.querySelectorAll('[data-tag=watchdog]').forEach(function (p) { p.remove(); });
+          b.querySelectorAll('[data-tag=watchdog]').forEach(function (p) {
+            p.remove();
+          });
           if (!b.querySelector('#fatalList').children.length) b.remove();
         };
-        window.addEventListener('error', function (e) {
-          var t = e.target;
-          if (t && t !== window && t.tagName === 'SCRIPT') return report('فشل تحميل مكتبة: ' + (t.src || ''));
-          if (t && t !== window) return;
-          var m = e.message || (e.error && e.error.message) || '';
-          if (/ResizeObserver/.test(m)) return; // تنبيه غير ضار
-          report('خطأ: ' + m);
-        }, true);
+        window.addEventListener(
+          'error',
+          function (e) {
+            var t = e.target;
+            if (t && t !== window && t.tagName === 'SCRIPT') return report('فشل تحميل مكتبة: ' + (t.src || ''));
+            if (t && t !== window) return;
+            var m = e.message || (e.error && e.error.message) || '';
+            if (/ResizeObserver/.test(m)) return; // تنبيه غير ضار
+            report('خطأ: ' + m);
+          },
+          true,
+        );
         window.addEventListener('unhandledrejection', function (e) {
           var r = e.reason;
-          report('خطأ غير معالج: ' + ((r && ((r.name ? r.name + ' — ' : '') + (r.message || ''))) || r));
+          report('خطأ غير معالج: ' + ((r && (r.name ? r.name + ' — ' : '') + (r.message || '')) || r));
         });
         setTimeout(function () {
-          if (!window.__nawyReady) report('لم يبدأ التطبيق بعد. غالباً تعذّر تحميل المكتبات (Tailwind / Dexie / Sortable) من الإنترنت — تأكد من الاتصال ثم أعد تحميل الصفحة.', 'watchdog');
+          if (!window.__nawyReady)
+            report(
+              'لم يبدأ التطبيق بعد. غالباً تعذّر تحميل المكتبات (Tailwind / Dexie / Sortable) من الإنترنت — تأكد من الاتصال ثم أعد تحميل الصفحة.',
+              'watchdog',
+            );
         }, 6000);
       })();
     </script>
     <header class="sticky top-0 z-30 bg-slate-50/90 backdrop-blur-md dark:bg-slate-950/90">
       <div class="safe-x mx-auto max-w-6xl py-2">
         <!-- شريط واحد: قائمة + بحث + ترتيب (مثل Keep) -->
-        <div id="searchBox" class="relative mx-auto flex h-12 max-w-xl items-center rounded-full border border-slate-200/80 bg-white shadow-[0_1px_4px_rgba(20,40,90,.06)] dark:border-slate-700/70 dark:bg-slate-900">
-          <button id="btnMenu" type="button" class="btn-icon ms-1 !rounded-full" aria-label="القائمة" aria-haspopup="dialog"></button>
-          <input id="search" type="search" autocomplete="off" enterkeyhint="search" placeholder="ابحث في ملاحظاتك..."
-            class="h-full min-w-0 flex-1 bg-transparent px-2 text-base outline-none placeholder:text-slate-400" />
+        <div
+          id="searchBox"
+          class="relative mx-auto flex h-12 max-w-xl items-center rounded-full border border-slate-200/80 bg-white shadow-[0_1px_4px_rgba(20,40,90,.06)] dark:border-slate-700/70 dark:bg-slate-900"
+        >
+          <button
+            id="btnMenu"
+            type="button"
+            class="btn-icon ms-1 !rounded-full"
+            aria-label="القائمة"
+            aria-haspopup="dialog"
+          ></button>
+          <input
+            id="search"
+            type="search"
+            autocomplete="off"
+            enterkeyhint="search"
+            placeholder="ابحث في ملاحظاتك..."
+            class="h-full min-w-0 flex-1 bg-transparent px-2 text-base outline-none placeholder:text-slate-400"
+          />
           <button id="btnLayout" type="button" class="btn-icon !rounded-full"></button>
-          <button id="btnSort" type="button" class="btn-icon me-1 !rounded-full" aria-haspopup="menu" aria-expanded="false"></button>
-          <div id="sortMenu" role="menu" class="modal-enter absolute end-0 top-full z-40 mt-2 hidden w-64 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"></div>
+          <button
+            id="btnSort"
+            type="button"
+            class="btn-icon me-1 !rounded-full"
+            aria-haspopup="menu"
+            aria-expanded="false"
+          ></button>
+          <div
+            id="sortMenu"
+            role="menu"
+            class="modal-enter absolute end-0 top-full z-40 mt-2 hidden w-64 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900"
+          ></div>
         </div>
       </div>
     </header>
@@ -136,8 +241,15 @@
     <!-- القائمة الجانبية: التنقل + باقي الأدوات -->
     <div id="drawerRoot" class="fixed inset-0 z-[70] hidden">
       <div id="drawerBackdrop" class="absolute inset-0 bg-black/30"></div>
-      <aside id="drawer" class="drawer-enter absolute inset-y-0 start-0 flex w-72 max-w-[82vw] flex-col gap-1 overflow-y-auto bg-white px-3 pb-6 dark:bg-slate-900" aria-label="القائمة">
-        <div class="flex items-center gap-3 px-3 pb-3 pt-6" style="padding-top:calc(1.5rem + env(safe-area-inset-top))">
+      <aside
+        id="drawer"
+        class="drawer-enter absolute inset-y-0 start-0 flex w-72 max-w-[82vw] flex-col gap-1 overflow-y-auto bg-white px-3 pb-6 dark:bg-slate-900"
+        aria-label="القائمة"
+      >
+        <div
+          class="flex items-center gap-3 px-3 pb-3 pt-6"
+          style="padding-top: calc(1.5rem + env(safe-area-inset-top))"
+        >
           <img src="./icon-192.png" alt="" width="36" height="36" class="h-9 w-9 rounded-[22%]" />
           <span class="text-lg font-semibold tracking-tight">ناوي نوت</span>
         </div>
@@ -145,14 +257,21 @@
         <div class="my-2 border-t border-slate-200/80 dark:border-slate-800"></div>
         <button id="btnTheme" type="button" class="drawer-item"></button>
         <button id="btnBackup" type="button" class="drawer-item"></button>
-        <button id="btnInstall" type="button" hidden class="drawer-item !text-brand-600 dark:!text-brand-300"><span id="installIcon" aria-hidden="true"></span><span>تثبيت ناوي نوت</span></button>
+        <button id="btnInstall" type="button" hidden class="drawer-item !text-brand-600 dark:!text-brand-300">
+          <span id="installIcon" aria-hidden="true"></span><span>تثبيت ناوي نوت</span>
+        </button>
       </aside>
     </div>
 
     <main class="safe-x main-pad mx-auto min-h-[calc(100dvh-5rem)] max-w-6xl pt-3 sm:pt-6">
-      <div id="trashBar" class="mx-auto mb-4 hidden max-w-xl items-center justify-between gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm text-slate-500 dark:bg-slate-800">
+      <div
+        id="trashBar"
+        class="mx-auto mb-4 hidden max-w-xl items-center justify-between gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm text-slate-500 dark:bg-slate-800"
+      >
         <span>تُحذف الملاحظات نهائياً بعد 30 يوماً.</span>
-        <button id="btnEmptyTrash" type="button" class="min-h-11 shrink-0 px-1 font-medium text-red-500">إفراغ المهملات</button>
+        <button id="btnEmptyTrash" type="button" class="min-h-11 shrink-0 px-1 font-medium text-red-500">
+          إفراغ المهملات
+        </button>
       </div>
 
       <section id="pinnedSection" class="mb-4 hidden">
@@ -165,7 +284,10 @@
       </section>
 
       <div id="empty" class="hidden flex-col items-center py-16 text-center text-slate-400">
-        <div id="emptyIcon" class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"></div>
+        <div
+          id="emptyIcon"
+          class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800"
+        ></div>
         <p id="emptyText" class="text-base text-slate-500 dark:text-slate-400"></p>
       </div>
     </main>
@@ -173,9 +295,18 @@
     <!-- زر الإضافة العائم -->
     <div id="fabRoot" class="fixed z-40">
       <div id="fabBackdrop" class="fixed inset-0 hidden bg-white/70 backdrop-blur-[2px] dark:bg-black/60"></div>
-      <div id="fabMenu" class="absolute bottom-[4.5rem] hidden flex-col-reverse items-end gap-3" style="inset-inline-end:0"></div>
-      <button id="fab" type="button" aria-label="إضافة ملاحظة" aria-expanded="false"
-        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_6px_20px_rgba(61,123,255,.35)] transition active:scale-95"></button>
+      <div
+        id="fabMenu"
+        class="absolute bottom-[4.5rem] hidden flex-col-reverse items-end gap-3"
+        style="inset-inline-end: 0"
+      ></div>
+      <button
+        id="fab"
+        type="button"
+        aria-label="إضافة ملاحظة"
+        aria-expanded="false"
+        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-brand-500 text-white shadow-[0_6px_20px_rgba(61,123,255,.35)] transition active:scale-95"
+      ></button>
     </div>
 
     <!-- شريط التحديث: لا نعيد التحميل أبداً وسط الكتابة، المستخدم يقرر -->
@@ -186,20 +317,43 @@
     </div>
 
     <!-- المحرر: شاشة كاملة على الهاتف، نافذة وسطية على الشاشات الكبيرة -->
-    <div id="editor" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-0 backdrop-blur-sm sm:p-4" role="dialog" aria-modal="true" aria-label="محرر الملاحظة">
-      <div id="editorCard" class="modal-enter flex h-full w-full flex-col overflow-hidden border border-slate-200 shadow-2xl dark:border-slate-800 sm:h-auto sm:max-h-[92dvh] sm:max-w-xl sm:rounded-2xl">
+    <div
+      id="editor"
+      class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-0 backdrop-blur-sm sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="محرر الملاحظة"
+    >
+      <div
+        id="editorCard"
+        class="modal-enter flex h-full w-full flex-col overflow-hidden border border-slate-200 shadow-2xl dark:border-slate-800 sm:h-auto sm:max-h-[92dvh] sm:max-w-xl sm:rounded-2xl"
+      >
         <div id="editorTop" class="flex shrink-0 items-center gap-0.5 px-1.5 pt-1"></div>
         <div id="editorBody" class="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5"></div>
-        <div id="editorFooter" class="relative flex items-center justify-between gap-1 border-t border-black/5 px-2 py-1.5 dark:border-white/10"></div>
+        <div
+          id="editorFooter"
+          class="relative flex items-center justify-between gap-1 border-t border-black/5 px-2 py-1.5 dark:border-white/10"
+        ></div>
       </div>
     </div>
 
     <!-- وضع القراءة -->
-    <div id="reader" class="fixed inset-0 z-50 hidden items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="قراءة الملاحظة">
+    <div
+      id="reader"
+      class="fixed inset-0 z-50 hidden items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="قراءة الملاحظة"
+    >
       <div id="readerCard"><div id="readerBody" class="contents"></div></div>
     </div>
 
-    <div id="toast" role="status" aria-live="polite" class="pointer-events-none fixed left-1/2 z-[60] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-slate-800 px-5 py-2.5 text-center text-sm text-white opacity-0 shadow-lg transition-opacity duration-300"></div>
+    <div
+      id="toast"
+      role="status"
+      aria-live="polite"
+      class="pointer-events-none fixed left-1/2 z-[60] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-slate-800 px-5 py-2.5 text-center text-sm text-white opacity-0 shadow-lg transition-opacity duration-300"
+    ></div>
     <input id="importFile" type="file" accept="application/json,.json" class="hidden" />
 
     <script type="module" src="/src/main.ts"></script>

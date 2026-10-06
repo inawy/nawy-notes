@@ -17,7 +17,12 @@ export function startDrawing(id?: string) {
     const availW = Math.min(window.innerWidth, 576) - 24;
     const availH = (big ? 0.92 : 1) * window.innerHeight - 150; // ناقص الشريط العلوي وأدوات الرسم
     const ratio = Math.min(1.8, Math.max(0.75, availH / availW));
-    att = { id: uid(), kind: 'draw', blob: null, drawing: { width: 900, height: Math.round(900 * ratio), strokes: [] } };
+    att = {
+      id: uid(),
+      kind: 'draw',
+      blob: null,
+      drawing: { width: 900, height: Math.round(900 * ratio), strokes: [] },
+    };
     n.attachments.push(att);
   }
   st.drawingId = att.id;
@@ -101,9 +106,9 @@ export function renderDrawMode(n: Note) {
       dot.classList.toggle('ring-brand-500', on);
       dot.classList.toggle('ring-offset-1', on);
     });
-    root.querySelectorAll<HTMLElement>('.pen-size').forEach((t) =>
-      t.classList.toggle('bg-black/10', Number(t.dataset.size) === b.size),
-    );
+    root
+      .querySelectorAll<HTMLElement>('.pen-size')
+      .forEach((t) => t.classList.toggle('bg-black/10', Number(t.dataset.size) === b.size));
     const undo = $<HTMLButtonElement>('#dUndo', root);
     undo.disabled = !b.canUndo;
     undo.classList.toggle('opacity-30', !b.canUndo);
@@ -129,4 +134,3 @@ export function renderDrawMode(n: Note) {
   };
   refresh();
 }
-

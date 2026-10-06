@@ -19,7 +19,10 @@ export function toast(msg: string, action?: { label: string; run: () => void }):
   }
   el.classList.remove('opacity-0');
   clearTimeout(timer);
-  timer = setTimeout(() => {
-    el.classList.add('opacity-0', 'pointer-events-none');
-  }, action ? 5000 : 2200);
+  timer = setTimeout(
+    () => {
+      el.classList.add('opacity-0', 'pointer-events-none');
+    },
+    action ? 5000 : 2200,
+  );
 }

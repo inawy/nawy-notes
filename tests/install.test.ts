@@ -12,13 +12,18 @@ function fakeEnv(nav: Partial<InstallEnv['navigator']> = {}, standalone = false)
   return { env, h };
 }
 const bip = (outcome: 'accepted' | 'dismissed' = 'accepted') => {
-  let prevented = false, prompted = 0;
+  let prevented = false,
+    prompted = 0;
   return {
     preventDefault: () => void (prevented = true),
     prompt: async () => void prompted++,
     userChoice: Promise.resolve({ outcome }),
-    get prevented() { return prevented; },
-    get prompted() { return prompted; },
+    get prevented() {
+      return prevented;
+    },
+    get prompted() {
+      return prompted;
+    },
   };
 };
 

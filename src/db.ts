@@ -1,5 +1,14 @@
 import Dexie, { type Table } from 'dexie';
-import type { Note, NoteStatus, NoteType, SerializedAttachment, SerializedNote, SortDir, SortMode, View } from './types';
+import type {
+  Note,
+  NoteStatus,
+  NoteType,
+  SerializedAttachment,
+  SerializedNote,
+  SortDir,
+  SortMode,
+  View,
+} from './types';
 import { buildEnvelope, normalizeNote, parseEnvelope } from './data/envelope';
 
 export { normalizeNote, ImportError } from './data/envelope';
@@ -77,7 +86,12 @@ export async function setStatus(id: string, status: NoteStatus): Promise<void> {
 
 /** يعيد الحالة السابقة بالكامل (للتراجع): الحالة + التثبيت. */
 export async function restoreState(id: string, status: NoteStatus, pinned: boolean): Promise<void> {
-  await db.notes.update(id, { status, pinned, updatedAt: Date.now(), trashedAt: status === 'trashed' ? Date.now() : null });
+  await db.notes.update(id, {
+    status,
+    pinned,
+    updatedAt: Date.now(),
+    trashedAt: status === 'trashed' ? Date.now() : null,
+  });
 }
 
 export async function deleteForever(id: string): Promise<void> {
@@ -156,7 +170,10 @@ export async function exportBackup(): Promise<Blob> {
     all.map(async (n): Promise<SerializedNote> => ({
       ...n,
       attachments: await Promise.all(
-        n.attachments.map(async (a): Promise<SerializedAttachment> => ({ ...a, blob: a.blob ? await blobToDataUrl(a.blob) : null })),
+        n.attachments.map(async (a): Promise<SerializedAttachment> => ({
+          ...a,
+          blob: a.blob ? await blobToDataUrl(a.blob) : null,
+        })),
       ),
     })),
   );

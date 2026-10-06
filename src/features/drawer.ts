@@ -18,13 +18,25 @@ export function mountDrawer(opts: { onOpen?: () => void } = {}): void {
     if (e.key === 'Escape') set(false);
   });
 
-  let sx = 0, sy = 0;
+  let sx = 0,
+    sy = 0;
   const root = $('#drawerRoot');
-  root.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-  root.addEventListener('touchend', (e) => {
-    const dx = e.changedTouches[0].clientX - sx;
-    const dy = e.changedTouches[0].clientY - sy;
-    const towardEdge = getComputedStyle(document.documentElement).direction === 'rtl' ? dx : -dx;
-    if (towardEdge > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) set(false);
-  }, { passive: true });
+  root.addEventListener(
+    'touchstart',
+    (e) => {
+      sx = e.touches[0].clientX;
+      sy = e.touches[0].clientY;
+    },
+    { passive: true },
+  );
+  root.addEventListener(
+    'touchend',
+    (e) => {
+      const dx = e.changedTouches[0].clientX - sx;
+      const dy = e.changedTouches[0].clientY - sy;
+      const towardEdge = getComputedStyle(document.documentElement).direction === 'rtl' ? dx : -dx;
+      if (towardEdge > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) set(false);
+    },
+    { passive: true },
+  );
 }

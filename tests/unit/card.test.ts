@@ -49,7 +49,10 @@ describe('بطاقة الشبكة', () => {
 
   it('الصورة تصبح غلافاً عبر blobUrl', () => {
     const blob = new Blob(['x']);
-    const html = cardHTML(note({ attachments: [{ id: 'a', kind: 'image', blob, drawing: null }] }), ctx({ blobUrl: () => 'blob:cover' }));
+    const html = cardHTML(
+      note({ attachments: [{ id: 'a', kind: 'image', blob, drawing: null }] }),
+      ctx({ blobUrl: () => 'blob:cover' }),
+    );
     expect(html).toContain('src="blob:cover"');
     expect(html).toContain('object-cover');
   });
@@ -71,7 +74,9 @@ describe('بطاقة الصف (القائمة)', () => {
       { id: '1', text: 'أ', done: true },
       { id: '2', text: 'ب', done: false },
     ];
-    expect(cardHTML(note({ type: 'list', title: 'مهام', items }), ctx({ layout: 'list' }))).toContain('2 عناصر، تمّ منها 1');
+    expect(cardHTML(note({ type: 'list', title: 'مهام', items }), ctx({ layout: 'list' }))).toContain(
+      '2 عناصر، تمّ منها 1',
+    );
   });
 });
 

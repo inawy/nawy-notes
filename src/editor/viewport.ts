@@ -34,12 +34,18 @@ export function pushHist() {
   try {
     history.pushState({ nawyNote: 'editor' }, '');
     histPushed = true;
-  } catch { /* بيئة بلا history: نتجاهل */ }
+  } catch {
+    /* بيئة بلا history: نتجاهل */
+  }
 }
 export function popHist() {
   if (!histPushed) return;
   histPushed = false;
-  try { history.back(); } catch { /* ignore */ }
+  try {
+    history.back();
+  } catch {
+    /* ignore */
+  }
 }
 window.addEventListener('popstate', () => {
   if (histPushed) {

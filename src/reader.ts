@@ -42,7 +42,11 @@ export function closeReader(): void {
   hist = false;
   hide();
   if (had) {
-    try { history.back(); } catch { /* ignore */ }
+    try {
+      history.back();
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -54,10 +58,12 @@ export function openReader(n: Note, onEdit: (n: Note) => void): void {
   };
   const media = n.attachments
     .map((a) => {
-      if (a.kind === 'image' && a.blob) return `<img src="${url(a.blob)}" alt="" class="mb-3 block max-h-[60dvh] w-full rounded-2xl object-contain" />`;
+      if (a.kind === 'image' && a.blob)
+        return `<img src="${url(a.blob)}" alt="" class="mb-3 block max-h-[60dvh] w-full rounded-2xl object-contain" />`;
       if (a.kind === 'draw' && a.drawing?.strokes.length)
         return `<div class="mb-3 rounded-2xl bg-white/70 p-3 text-slate-800 dark:bg-black/20 dark:text-slate-100">${drawingPreviewSvg(a.drawing)}</div>`;
-      if (a.kind === 'audio' && a.blob) return `<audio controls preload="metadata" src="${url(a.blob)}" class="mb-3 w-full"></audio>`;
+      if (a.kind === 'audio' && a.blob)
+        return `<audio controls preload="metadata" src="${url(a.blob)}" class="mb-3 w-full"></audio>`;
       return '';
     })
     .join('');
@@ -99,7 +105,12 @@ export function openReader(n: Note, onEdit: (n: Note) => void): void {
   el.classList.add('flex');
   document.body.classList.add('overflow-hidden');
   isOpen = true;
-  try { history.pushState({ nawyNote: 'reader' }, ''); hist = true; } catch { /* ignore */ }
+  try {
+    history.pushState({ nawyNote: 'reader' }, '');
+    hist = true;
+  } catch {
+    /* ignore */
+  }
 
   const edit = () => {
     closeReader();
@@ -118,6 +129,10 @@ export function openReader(n: Note, onEdit: (n: Note) => void): void {
   };
   if (!wired) {
     wired = true;
-    swipeDismiss(card, () => closeReader(), () => document.getElementById('rContent'));
+    swipeDismiss(
+      card,
+      () => closeReader(),
+      () => document.getElementById('rContent'),
+    );
   }
 }

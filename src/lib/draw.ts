@@ -33,7 +33,11 @@ const inkFill = (c: string) => (c === 'ink' ? 'currentColor' : c);
 /** معاينة SVG مقصوصة على حدود الرسم (لبطاقات الشاشة الرئيسية). */
 export function drawingPreviewSvg(d: Drawing): string {
   if (!d.strokes.length) return '';
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, maxSize = 0;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity,
+    maxSize = 0;
   for (const s of d.strokes) {
     maxSize = Math.max(maxSize, s.size);
     for (const [x, y] of s.points) {
@@ -48,9 +52,7 @@ export function drawingPreviewSvg(d: Drawing): string {
   const y = Math.max(0, minY - pad);
   const w = Math.max(40, Math.min(d.width, maxX + pad) - x);
   const h = Math.max(40, Math.min(d.height, maxY + pad) - y);
-  const paths = d.strokes
-    .map((s) => `<path d="${strokePath(s)}" fill="${inkFill(s.color)}"/>`)
-    .join('');
+  const paths = d.strokes.map((s) => `<path d="${strokePath(s)}" fill="${inkFill(s.color)}"/>`).join('');
   return `<svg viewBox="${x.toFixed(0)} ${y.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" class="w-full h-auto" role="img" aria-label="رسم">${paths}</svg>`;
 }
 

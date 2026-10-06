@@ -9,7 +9,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'favicon.ico', 'favicon-16.png', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png'],
+      includeAssets: [
+        'favicon.svg',
+        'favicon.ico',
+        'favicon-16.png',
+        'favicon-32.png',
+        'apple-touch-icon.png',
+        'icon-192.png',
+      ],
       manifest: {
         id: 'nawy-note', // هوية مستقلة للتطبيق حين يشاركه الموقع منتجات أخرى
         name: 'ناوي نوت',
@@ -24,10 +31,30 @@ export default defineConfig({
         theme_color: '#f8fafc',
         // الضغط المطوّل على الأيقونة: إجراءات سريعة تفتح المحرر مباشرة
         shortcuts: [
-          { name: 'ملاحظة جديدة', short_name: 'ملاحظة', url: './?new=text', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
-          { name: 'قائمة جديدة', short_name: 'قائمة', url: './?new=list', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
-          { name: 'تسجيل صوتي', short_name: 'تسجيل', url: './?new=audio', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
-          { name: 'رسم', short_name: 'رسم', url: './?new=draw', icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }] },
+          {
+            name: 'ملاحظة جديدة',
+            short_name: 'ملاحظة',
+            url: './?new=text',
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'قائمة جديدة',
+            short_name: 'قائمة',
+            url: './?new=list',
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'تسجيل صوتي',
+            short_name: 'تسجيل',
+            url: './?new=audio',
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
+          {
+            name: 'رسم',
+            short_name: 'رسم',
+            url: './?new=draw',
+            icons: [{ src: 'icon-192.png', sizes: '192x192', type: 'image/png' }],
+          },
         ],
         // المشاركة من تطبيقات أخرى (نص/رابط) تصبح ملاحظة جديدة
         share_target: { action: './', method: 'GET', params: { title: 'title', text: 'text', url: 'url' } },
