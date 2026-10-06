@@ -6,13 +6,13 @@ import type { Layout, Note, SortDir, SortMode, View } from './types';
 import {
   db, deleteForever, getNote, emptyTrash, exportBackup, importBackup, listNotes, newNote, purgeOldTrash, reorderNotes, setStatus,
 } from './db';
-import { $, debounce, esc } from './lib/util';
+import { $, debounce } from './lib/util';
 import { icon } from './lib/icons';
-import { drawingPreviewSvg } from './lib/draw';
 import { toast } from './lib/toast';
 import { appReady, dbMessage, reportError } from './lib/report';
 import { createInstaller, IOS_HELP, type InstallState } from './pwa/install';
 import { closeEditor, flushEditor, isEditorOpen, openEditor, setOnSaved } from './editor';
+import { cardHTML } from './views/card';
 import { closeReader, isReaderOpen, openReader } from './reader';
 
 let view: View = 'notes';
@@ -115,111 +115,7 @@ function blobUrl(b: Blob): string {
   return u;
 }
 
-/** ملخّص سطر واحد/سطرين لعرض الصفوف. */
-function summaryOf(n: Note): string {
-  if (n.type === 'list') {
-    const done = n.items.filter((i) => i.done).length;
-    return n.items.length ? `${n.items.length} عناصر، تمّ منها ${done}` : '';
-  }
-  return n.body.trim().slice(0, 100);
-}
-
-function cardHTML(n: Note): string {
-  const trash = view === 'trash';
-  const imgs = n.attachments.filter((a) => a.kind === 'image' && a.blob);
-  const draws = n.attachments.filter((a) => a.kind === 'draw' && a.drawing?.strokes.length);
-  const audios = n.attachments.filter((a) => a.kind === 'audio' && a.blob);
-  const base = `note-card nc-${n.color} cursor-pointer overflow-hidden rounded-[18px] border border-black/[0.07] dark:border-white/10`;
-
-  const actions = trash
-    ? `<div class="flex shrink-0 gap-1 border-t border-black/5 px-2 dark:border-white/10">
-         <button type="button" data-act="restore" class="flex min-h-11 items-center gap-1 px-1 text-xs font-medium text-brand-600 dark:text-brand-300">${icon('restore', 'w-4 h-4')} استعادة</button>
-         <button type="button" data-act="purge" class="ms-auto flex min-h-11 items-center gap-1 px-1 text-xs font-medium text-red-500">${icon('trash', 'w-4 h-4')} حذف نهائي</button>
-       </div>`
-    : '';
-
-  // ---- عرض الصفوف: ارتفاع ثابت، صورة مصغّرة ثم العنوان والوصف ----
-  if (layout === 'list') {
-    let thumb = icon(n.type === 'list' ? 'list' : 'notes', 'w-6 h-6');
-    let fallback = summaryOf(n);
-    if (imgs.length) {
-      thumb = `<img src="${blobUrl(imgs[0].blob!)}" alt="" loading="lazy" class="h-full w-full object-cover" />`;
-      fallback ||= 'صورة';
-    } else if (draws.length) {
-      thumb = `<div class="h-full w-full p-1 text-slate-800 [&>svg]:h-full [&>svg]:w-full dark:text-slate-100">${drawingPreviewSvg(draws[0].drawing!)}</div>`;
-      fallback ||= 'رسم';
-    } else if (audios.length) {
-      thumb = icon('mic', 'w-6 h-6');
-      fallback ||= 'تسجيل صوتي';
-    }
-    return `<article class="${base} flex ${trash ? 'min-h-[84px] flex-col' : 'h-[84px] items-center gap-3 p-2.5'}" data-id="${n.id}" ${trash ? '' : 'tabindex="0"'}>
-      <div class="${trash ? 'flex flex-1 items-center gap-3 p-2.5' : 'contents'}">
-        <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/70 text-slate-500 dark:bg-black/20 dark:text-slate-300">${thumb}</div>
-        <div class="min-w-0 flex-1">
-          <h3 class="truncate text-[15px] font-semibold">${n.pinned ? '📌 ' : ''}${esc(n.title || fallback || 'ملاحظة')}</h3>
-          ${n.title && fallback ? `<p class="clamp-2 mt-0.5 break-words text-[12.5px] leading-snug opacity-70">${esc(fallback)}</p>` : ''}
-        </div>
-      </div>${actions}
-    </article>`;
-  }
-
-  // ---- عرض الشبكة: بطاقات مربّعة متقاربة الحجم ----
-  const chip = (name: Parameters<typeof icon>[0], label = '') =>
-    `<span class="inline-flex items-center gap-1 rounded-full bg-black/5 px-1.5 py-0.5 text-[11px] dark:bg-white/10">${icon(name, 'w-3.5 h-3.5')}${label}</span>`;
-  const cover = imgs.length ? 'img' : draws.length ? 'draw' : '';
-  const chips: string[] = [];
-  if (audios.length) chips.push(chip('mic', audios.length > 1 ? String(audios.length) : ''));
-  if (imgs.length > 1) chips.push(chip('image', `+${imgs.length - 1}`));
-  const extraDraws = cover === 'img' ? draws.length : draws.length - 1;
-  if (extraDraws > 0) chips.push(chip('pencil', String(extraDraws)));
-  const chipRow = chips.length ? `<div class="absolute bottom-2 start-3 z-[1] flex gap-1">${chips.join('')}</div>` : '';
-  const pin = n.pinned ? `<span class="absolute end-2 top-2 z-[1] text-[11px] opacity-60">📌</span>` : '';
-
-  let inner: string;
-  if (cover) {
-    const layer =
-      cover === 'img'
-        ? `<img src="${blobUrl(imgs[0].blob!)}" alt="${esc(n.title || 'صورة')}" loading="lazy" class="absolute inset-0 h-full w-full object-cover" />`
-        : `<div class="absolute inset-0 flex items-center justify-center p-3 pb-10 text-slate-800 dark:text-slate-100 [&>svg]:max-h-full [&>svg]:w-full">${drawingPreviewSvg(draws[0].drawing!)}</div>`;
-    const dark = cover === 'img';
-    const cap = n.title || (cover === 'draw' ? 'رسم' : '');
-    inner = `${layer}${
-      cap
-        ? `<div class="absolute inset-x-0 bottom-0 flex items-center gap-1.5 px-3 pb-2 pt-7 text-[13px] font-semibold ${
-            dark ? 'bg-gradient-to-t from-black/60 to-transparent text-white' : 'card-fade'
-          }"><span class="truncate">${esc(cap)}</span></div>`
-        : ''
-    }${dark && chips.length ? '' : chipRow}`;
-  } else {
-    let content = '';
-    if (n.type === 'text') {
-      if (n.body) content = `<p class="clamp-5 whitespace-pre-wrap break-words text-[13px] leading-[1.65] opacity-80">${esc(n.body.slice(0, 260))}</p>`;
-    } else {
-      const all = n.items.filter((i) => i.text.trim());
-      const shown = all.slice(0, 4);
-      const more = all.length - shown.length;
-      content =
-        `<ul class="text-[13px]">` +
-        shown
-          .map(
-            (i) => `<li class="flex h-[26px] items-center gap-2 ${i.done ? 'line-through opacity-50' : 'opacity-85'}">
-            <span class="flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[5px] border-[1.6px] border-current">${i.done ? icon('check', 'w-2.5 h-2.5', 3.5) : ''}</span>
-            <span class="truncate">${esc(i.text)}</span></li>`,
-          )
-          .join('') +
-        (more > 0 ? `<li class="mt-0.5 text-[11px] opacity-60">+ ${more} عناصر أخرى</li>` : '') +
-        `</ul>`;
-    }
-    if (!content && !n.title && audios.length) content = `<div class="mt-6 flex justify-center opacity-70">${icon('mic', 'w-10 h-10', 1.6)}</div>`;
-    inner = `<div class="p-3 ${n.pinned ? 'pe-7' : ''}">${
-      n.title ? `<h3 class="clamp-2 mb-1 break-words text-[15px] font-semibold leading-snug">${esc(n.title)}</h3>` : ''
-    }${content}</div><div class="card-fade pointer-events-none absolute inset-x-0 bottom-0 h-9"></div>${chipRow}`;
-  }
-
-  return `<article class="${base} relative flex aspect-square flex-col" data-id="${n.id}" ${trash ? '' : 'tabindex="0"'}>
-    <div class="relative min-h-0 flex-1 overflow-hidden">${pin}${inner}</div>${actions}
-  </article>`;
-}
+const card = (n: Note): string => cardHTML(n, { trash: view === 'trash', layout, blobUrl });
 
 function render(notes: Note[]) {
   urls.forEach((u) => URL.revokeObjectURL(u));
@@ -229,9 +125,9 @@ function render(notes: Note[]) {
   const others = view === 'notes' ? notes.filter((n) => !n.pinned) : notes;
 
   $('#pinnedSection').classList.toggle('hidden', !pinned.length);
-  $('#pinnedGrid').innerHTML = pinned.map(cardHTML).join('');
+  $('#pinnedGrid').innerHTML = pinned.map(card).join('');
   $('#othersTitle').classList.toggle('hidden', !(pinned.length && others.length));
-  $('#grid').innerHTML = others.map(cardHTML).join('');
+  $('#grid').innerHTML = others.map(card).join('');
 
   const empty = !notes.length;
   const e = $('#empty');
