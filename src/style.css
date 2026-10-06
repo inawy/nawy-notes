@@ -76,13 +76,18 @@
   #editor.kb-open #editorFooter { padding-bottom: 0.375rem; }
 }
 
-/* تخطيط متدرّج (masonry) بترتيب قراءة صفّي: صفوف 4px وكل بطاقة تمتد على عدد منها (يحسبه main.ts) */
-.notes-grid { --gap: 0.625rem; display: grid; column-gap: var(--gap); row-gap: 0; grid-auto-rows: 4px; align-items: start; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 640px) { .notes-grid { --gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1024px) { .notes-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1280px) { .notes-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* شبكة بطاقات مربّعة متقاربة الحجم: السحب والإفلات متوقّع لأن كل الخانات متساوية */
+.notes-grid { --gap: 0.625rem; display: grid; gap: var(--gap); align-items: start; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 640px) { .notes-grid { --gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .notes-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .notes-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 /* عرض الصفوف (قائمة) */
-html[data-layout='list'] .notes-grid { --gap: 0.625rem; grid-template-columns: minmax(0, 1fr); max-width: 42rem; margin-inline: auto; }
+html[data-layout='list'] .notes-grid { --gap: 0.5rem; grid-template-columns: minmax(0, 1fr); max-width: 42rem; margin-inline: auto; }
+.clamp-2, .clamp-5 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp-2 { -webkit-line-clamp: 2; }
+.clamp-5 { -webkit-line-clamp: 5; }
+/* تلاشي أسفل البطاقة بلون البطاقة نفسها */
+.card-fade { background: linear-gradient(to bottom, transparent, var(--card-bg, var(--n-default))); }
 
 .note-card {
   -webkit-touch-callout: none;
@@ -102,11 +107,11 @@ html[data-layout='list'] .notes-grid { --gap: 0.625rem; grid-template-columns: m
   --n-default: #1e293b; --n-red: #7f1d1d; --n-orange: #9a3412; --n-yellow: #854d0e; --n-green: #14532d;
   --n-teal: #134e4a; --n-blue: #1e3a8a; --n-purple: #581c87; --n-pink: #831843; --n-gray: #334155;
 }
-.nc-default { background: var(--n-default); } .nc-red { background: var(--n-red); }
-.nc-orange { background: var(--n-orange); } .nc-yellow { background: var(--n-yellow); }
-.nc-green { background: var(--n-green); } .nc-teal { background: var(--n-teal); }
-.nc-blue { background: var(--n-blue); } .nc-purple { background: var(--n-purple); }
-.nc-pink { background: var(--n-pink); } .nc-gray { background: var(--n-gray); }
+.nc-default { background: var(--n-default); --card-bg: var(--n-default); } .nc-red { background: var(--n-red); --card-bg: var(--n-red); }
+.nc-orange { background: var(--n-orange); --card-bg: var(--n-orange); } .nc-yellow { background: var(--n-yellow); --card-bg: var(--n-yellow); }
+.nc-green { background: var(--n-green); --card-bg: var(--n-green); } .nc-teal { background: var(--n-teal); --card-bg: var(--n-teal); }
+.nc-blue { background: var(--n-blue); --card-bg: var(--n-blue); } .nc-purple { background: var(--n-purple); --card-bg: var(--n-purple); }
+.nc-pink { background: var(--n-pink); --card-bg: var(--n-pink); } .nc-gray { background: var(--n-gray); --card-bg: var(--n-gray); }
 
 /* القائمة الجانبية */
 .drawer-enter { animation: drawerIn 0.25s var(--ease-out); }

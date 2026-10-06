@@ -194,6 +194,11 @@
       </div>
     </div>
 
+    <!-- وضع القراءة -->
+    <div id="reader" class="fixed inset-0 z-50 hidden items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="قراءة الملاحظة">
+      <div id="readerCard"><div id="readerBody" class="contents"></div></div>
+    </div>
+
     <div id="toast" role="status" aria-live="polite" class="pointer-events-none fixed left-1/2 z-[60] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-slate-800 px-5 py-2.5 text-center text-sm text-white opacity-0 shadow-lg transition-opacity duration-300"></div>
     <input id="importFile" type="file" accept="application/json,.json" class="hidden" />
 
