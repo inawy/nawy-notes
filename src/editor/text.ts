@@ -1,5 +1,6 @@
 import { type CheckItem, type Note } from '../types';
-import { $, esc, uid } from '../lib/util';
+import { $, uid } from '../lib/util';
+import { html, raw } from '../lib/html';
 import { icon } from '../lib/icons';
 import { st, hooks, touch } from './session';
 
@@ -30,8 +31,8 @@ export function mountDictationTip(root: HTMLElement, n: Note) {
 }
 
 export function renderText(n: Note, root: HTMLElement) {
-  root.innerHTML = `<textarea id="eText" rows="8" placeholder="اكتب ملاحظتك..."
-    class="w-full resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-slate-400">${esc(n.body)}</textarea>`;
+  root.innerHTML = String(html`<textarea id="eText" rows="8" placeholder="اكتب ملاحظتك..."
+    class="w-full resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-slate-400">${n.body}</textarea>`);
   const ta = $<HTMLTextAreaElement>('#eText', root);
   mountDictationTip(root, n);
   const fit = () => {
@@ -48,17 +49,17 @@ export function renderText(n: Note, root: HTMLElement) {
 
 // ---------- قائمة ----------
 export function renderList(n: Note, root: HTMLElement) {
-  const row = (it: CheckItem) => `
+  const row = (it: CheckItem) => html`
     <div class="flex items-center gap-2" data-id="${it.id}">
-      <input type="checkbox" class="h-4.5 w-4.5 shrink-0 accent-brand-500" ${it.done ? 'checked' : ''} aria-label="تم" />
-      <input type="text" value="${esc(it.text)}" placeholder="عنصر"
+      <input type="checkbox" class="h-4.5 w-4.5 shrink-0 accent-brand-500" ${it.done ? raw('checked') : ''} aria-label="تم" />
+      <input type="text" value="${it.text}" placeholder="عنصر"
         class="min-w-0 flex-1 bg-transparent py-1 text-[15px] outline-none placeholder:text-slate-400 ${it.done ? 'line-through opacity-50' : ''}" />
-      <button type="button" class="rm btn-icon" aria-label="حذف العنصر">${icon('x', 'w-4 h-4')}</button>
+      <button type="button" class="rm btn-icon" aria-label="حذف العنصر">${raw(icon('x', 'w-4 h-4'))}</button>
     </div>`;
   const draw = () => {
-    root.innerHTML = `<div class="space-y-1" id="rows">${n.items.map(row).join('')}</div>
+    root.innerHTML = String(html`<div class="space-y-1" id="rows">${n.items.map(row)}</div>
       <button type="button" id="addItem" class="mt-2 flex items-center gap-2 text-sm text-slate-500 hover:text-brand-500">
-        ${icon('plus', 'w-4 h-4')} إضافة عنصر</button>`;
+        ${raw(icon('plus', 'w-4 h-4'))} إضافة عنصر</button>`);
   };
   draw();
 

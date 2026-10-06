@@ -1,5 +1,6 @@
 import type { Note } from './types';
-import { $, esc } from './lib/util';
+import { $ } from './lib/util';
+import { html, raw } from './lib/html';
 import { icon } from './lib/icons';
 import { drawingPreviewSvg } from './lib/draw';
 import { swipeDismiss } from './lib/swipe-dismiss';
@@ -59,46 +60,42 @@ export function openReader(n: Note, onEdit: (n: Note) => void): void {
   const media = n.attachments
     .map((a) => {
       if (a.kind === 'image' && a.blob)
-        return `<img src="${url(a.blob)}" alt="" class="mb-3 block max-h-[60dvh] w-full rounded-2xl object-contain" />`;
+        return html`<img src="${url(a.blob)}" alt="" class="mb-3 block max-h-[60dvh] w-full rounded-2xl object-contain" />`;
       if (a.kind === 'draw' && a.drawing?.strokes.length)
-        return `<div class="mb-3 rounded-2xl bg-white/70 p-3 text-slate-800 dark:bg-black/20 dark:text-slate-100">${drawingPreviewSvg(a.drawing)}</div>`;
+        return html`<div class="mb-3 rounded-2xl bg-white/70 p-3 text-slate-800 dark:bg-black/20 dark:text-slate-100">${raw(drawingPreviewSvg(a.drawing))}</div>`;
       if (a.kind === 'audio' && a.blob)
-        return `<audio controls preload="metadata" src="${url(a.blob)}" class="mb-3 w-full"></audio>`;
+        return html`<audio controls preload="metadata" src="${url(a.blob)}" class="mb-3 w-full"></audio>`;
       return '';
-    })
-    .join('');
+    });
 
   const body =
     n.type === 'list'
-      ? `<ul class="space-y-2 text-base">` +
-        n.items
+      ? html`<ul class="space-y-2 text-base">${n.items
           .filter((i) => i.text.trim())
           .map(
-            (i) => `<li class="flex items-start gap-3 ${i.done ? 'line-through opacity-50' : ''}">
-              <span class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 border-current">${i.done ? icon('check', 'w-3.5 h-3.5', 3) : ''}</span>
-              <span class="break-words">${esc(i.text)}</span></li>`,
-          )
-          .join('') +
-        `</ul>`
+            (i) => html`<li class="flex items-start gap-3 ${i.done ? 'line-through opacity-50' : ''}">
+              <span class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 border-current">${i.done ? raw(icon('check', 'w-3.5 h-3.5', 3)) : ''}</span>
+              <span class="break-words">${i.text}</span></li>`,
+          )}</ul>`
       : n.body
-        ? `<p class="whitespace-pre-wrap break-words text-base leading-8">${esc(n.body)}</p>`
+        ? html`<p class="whitespace-pre-wrap break-words text-base leading-8">${n.body}</p>`
         : '';
 
   const when = new Date(n.updatedAt).toLocaleString('ar', { dateStyle: 'medium', timeStyle: 'short' });
   const card = $('#readerCard');
   card.style.cssText = ''; // يزيل أثر سحب سابق
   card.className = `sheet-enter relative flex max-h-[92dvh] min-h-[50dvh] w-full flex-col overflow-hidden rounded-t-[26px] border border-black/5 sm:max-w-xl sm:rounded-3xl dark:border-white/10 nc-${n.color}`;
-  $('#readerBody').innerHTML = `
+  $('#readerBody').innerHTML = String(html`
     <div class="flex shrink-0 items-center gap-1 px-2 pt-2">
-      <button type="button" id="rClose" class="btn-icon !h-12 !w-12 !rounded-full" aria-label="إغلاق">${icon('x', 'w-6 h-6')}</button>
+      <button type="button" id="rClose" class="btn-icon !h-12 !w-12 !rounded-full" aria-label="إغلاق">${raw(icon('x', 'w-6 h-6'))}</button>
       <span class="flex-1"></span>
-      <button type="button" id="rEdit" class="flex h-11 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-medium text-white active:scale-95">${icon('pencil', 'w-4 h-4')} تعديل</button>
+      <button type="button" id="rEdit" class="flex h-11 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-medium text-white active:scale-95">${raw(icon('pencil', 'w-4 h-4'))} تعديل</button>
     </div>
     <div id="rContent" class="min-h-0 flex-1 cursor-text overflow-y-auto overscroll-contain px-5 pb-8 pt-3">
-      ${n.title ? `<h2 class="mb-4 break-words text-2xl font-semibold leading-snug">${esc(n.title)}</h2>` : ''}
+      ${n.title ? html`<h2 class="mb-4 break-words text-2xl font-semibold leading-snug">${n.title}</h2>` : ''}
       ${media}${body}
       <p class="mt-6 text-xs opacity-50">عُدّلت ${when} · اضغط على المحتوى للتعديل</p>
-    </div>`;
+    </div>`);
 
   const el = $('#reader');
   el.classList.remove('hidden');

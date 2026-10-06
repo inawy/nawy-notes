@@ -1,6 +1,7 @@
 import { type Note } from '../types';
 import { deleteForever, isEmptyNote, saveNote } from '../db';
-import { $, esc } from '../lib/util';
+import { $ } from '../lib/util';
+import { html } from '../lib/html';
 import { hooks, st, notifySaved, releaseUrls, save, touch, type InitialAction } from './session';
 import { popHist, pushHist, trackViewport } from './viewport';
 import { renderList, renderText } from './text';
@@ -105,11 +106,11 @@ export function renderNote(n: Note) {
   renderTop();
   $('#editorBody').onclick = null; // معالج وضع الرسم لا يجب أن يبقى بعد الخروج منه
   $('#editorBody').className = 'flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5';
-  $('#editorBody').innerHTML = `
+  $('#editorBody').innerHTML = String(html`
     <div id="eMedia"></div>
-    <input id="eTitle" type="text" value="${esc(n.title)}" placeholder="العنوان"
+    <input id="eTitle" type="text" value="${n.title}" placeholder="العنوان"
       class="mb-3 w-full bg-transparent text-xl font-semibold outline-none placeholder:text-slate-400" />
-    <div id="eContent"></div>`;
+    <div id="eContent"></div>`);
   $<HTMLInputElement>('#eTitle').addEventListener('input', (e) => {
     n.title = (e.target as HTMLInputElement).value;
     touch();
