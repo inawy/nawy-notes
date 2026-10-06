@@ -107,3 +107,7 @@
 ## تقسيم المحرر
 - `editor.ts` (730 سطراً) صار مجلد `editor/`: `session.ts` (كائن حالة واحد `st` + الحفظ التلقائي)، `viewport.ts` (لوحة المفاتيح وزر الرجوع)، `text.ts` (نص وقائمة)، `media.ts` (صور وتسجيل)، `draw-mode.ts`، `toolbar.ts` (الشريط العلوي والسفلي)، `index.ts` (فتح/إغلاق وتجميع).
 - الاعتماد الدائري بين الوحدات حُلّ بكائن `hooks` في `session.ts` تضبطه `index.ts`، فلا استيراد دائري.
+
+## ESLint (flat config)
+- `eslint.config.js`: recommended من `@eslint/js` + `typescript-eslint`، و`eslint-config-prettier` لتجنّب التعارض مع Prettier.
+- خطوة lint في CI `continue-on-error` مؤقتاً؛ تصبح مانعة بعد تنظيف التحذيرات.

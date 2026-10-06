@@ -12,6 +12,7 @@
     "test": "npm run test:node && npm run test:unit",
     "test:node": "node --test tests/*.test.ts",
     "test:unit": "vitest run",
+    "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

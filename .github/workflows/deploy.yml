@@ -25,6 +25,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run lint # غير مانع مؤقتاً حتى تُضبط القواعد
+        continue-on-error: true
       - run: npm test # الاختبارات أولاً: فشلها يوقف النشر
       - run: npm run build # يتضمن فحص الأنواع (tsc --noEmit)
       - uses: actions/upload-pages-artifact@v3
