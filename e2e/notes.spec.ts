@@ -309,6 +309,7 @@ test.describe('سطح المكتب: السحب بالفأرة لإعادة ال�
 
     await expect.poll(titles).not.toEqual(['ج', 'ب', 'أ']);
     const after = await titles();
+    await page.waitForTimeout(400); // اكتمال الحفظ في IndexedDB قبل إعادة التحميل
     await page.reload();
     await page.waitForSelector('#fab');
     expect(await titles()).toEqual(after);

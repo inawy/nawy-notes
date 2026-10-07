@@ -268,8 +268,8 @@ export function makeReorderable(container: HTMLElement, opts: ReorderOptions): (
       d.ghost.remove();
       d.el.classList.remove('drag-ghost', 'drag-chosen');
       document.body.classList.remove('reordering');
-      opts.onEnd?.(changed);
     };
+    opts.onEnd?.(changed); // الحفظ فوراً، لا ننتظر حركة الهبوط
     if (reduced()) {
       done();
     } else {
