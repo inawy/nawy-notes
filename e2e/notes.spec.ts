@@ -112,3 +112,36 @@ test('ألوان العلامة: لا رموز {{brand}} متبقية والخل
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)).toBe('rgb(248, 250, 252)');
   expect(await page.getAttribute('meta[name=theme-color]', 'content')).toBe('#f8fafc');
 });
+
+test('الحذف النهائي يترك شاهد حذف بلا محتوى ولا يظهر في أي عرض', async ({ page }) => {
+  page.on('dialog', (d) => void d.accept());
+  await open(page);
+  await newNote(page, 'text');
+  await page.fill('#eTitle', 'سيُحذف');
+  await page.fill('#eText', 'سري');
+  await expect(page.locator('#eSaved')).toContainText('محفوظة');
+  await page.click('#eTrash');
+  await expect(page.locator('.note-card')).toHaveCount(0);
+
+  await page.click('#btnMenu');
+  await page.click('#tabs [data-view="trash"]');
+  await expect(page.locator('.note-card')).toHaveCount(1);
+  await page.click('[data-act="purge"]');
+  await expect(page.locator('.note-card')).toHaveCount(0);
+
+  const rows = await page.evaluate(
+    () =>
+      new Promise<Record<string, unknown>[]>((res, rej) => {
+        const r = indexedDB.open('nawy-note-db');
+        r.onerror = () => rej(r.error);
+        r.onsuccess = () => {
+          const q = r.result.transaction('notes').objectStore('notes').getAll();
+          q.onsuccess = () => res(q.result);
+        };
+      }),
+  );
+  expect(rows).toHaveLength(1);
+  expect(rows[0]).toMatchObject({ status: 'deleted', title: '', body: '' });
+  expect(typeof rows[0].deletedAt).toBe('number');
+  expect(JSON.stringify(rows[0])).not.toContain('سري');
+});

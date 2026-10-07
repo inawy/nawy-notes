@@ -35,7 +35,7 @@ async function maybeRemindBackup(): Promise<void> {
     const last = Number(localStorage.getItem(BK_LAST) ?? localStorage.getItem(BK_ASKED));
     const asked = Number(localStorage.getItem(BK_ASKED));
     if (now - last < 30 * DAY || now - asked < 14 * DAY) return;
-    if ((await db.notes.toArray()).length < 3) return;
+    if ((await db.notes.filter((n) => n.status !== 'deleted').count()) < 3) return;
     localStorage.setItem(BK_ASKED, String(now));
     toast('ملاحظاتك محفوظة على هذا الجهاز فقط. خذ نسخة احتياطية؟', { label: 'نسخ الآن', run: () => void doBackup() });
   } catch {

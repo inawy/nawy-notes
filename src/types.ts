@@ -1,7 +1,8 @@
 /** نوع محتوى الملاحظة الأساسي. الصور والصوت والرسم مرفقات وليست أنواعاً. */
 export type NoteType = 'text' | 'list';
 export type AttachmentKind = 'image' | 'audio' | 'draw';
-export type NoteStatus = 'active' | 'archived' | 'trashed';
+/** 'deleted' = شاهد حذف (tombstone): يبقى الصف بلا محتوى كي لا تُعيد المزامنة/الاستيراد ملاحظة محذوفة. */
+export type NoteStatus = 'active' | 'archived' | 'trashed' | 'deleted';
 
 export const COLOR_IDS = [
   'default',
@@ -80,6 +81,8 @@ export interface Note {
   createdAt: number;
   updatedAt: number;
   trashedAt: number | null;
+  /** وقت الحذف النهائي (للشواهد فقط). */
+  deletedAt?: number | null;
 }
 
 export type View = 'notes' | 'archive' | 'trash';

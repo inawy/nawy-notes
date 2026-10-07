@@ -94,20 +94,49 @@ export async function restoreState(id: string, status: NoteStatus, pinned: boole
   });
 }
 
+/** مدة الاحتفاظ بشواهد الحذف قبل تنظيفها (تتسع لمزامنة أجهزة غائبة مدة طويلة). */
+export const TOMBSTONE_DAYS = 180;
+
+/** حقول شاهد الحذف: تمسح المحتوى والوسائط (تحرير المساحة) وتُبقي المعرّف وتاريخ الحذف. */
+export function tombstone(now: number): Partial<Note> {
+  return {
+    status: 'deleted',
+    title: '',
+    body: '',
+    items: [],
+    attachments: [],
+    pinned: false,
+    trashedAt: null,
+    updatedAt: now,
+    deletedAt: now,
+  };
+}
+
 export async function deleteForever(id: string): Promise<void> {
-  await db.notes.delete(id);
+  await db.notes.update(id, tombstone(Date.now()));
 }
 
 export async function emptyTrash(): Promise<void> {
-  await db.notes.where('status').equals('trashed').delete();
+  const t = tombstone(Date.now());
+  await db.notes
+    .where('status')
+    .equals('trashed')
+    .modify((n) => Object.assign(n, structuredClone(t)));
 }
 
+/** يحذف ملاحظات المهملات القديمة (إلى شواهد) وينظّف الشواهد المنتهية. */
 export async function purgeOldTrash(): Promise<void> {
-  const cutoff = Date.now() - TRASH_DAYS * DAY;
+  const now = Date.now();
+  const cutoff = now - TRASH_DAYS * DAY;
   await db.notes
     .where('status')
     .equals('trashed')
     .filter((n) => (n.trashedAt ?? 0) < cutoff)
+    .modify((n) => Object.assign(n, structuredClone(tombstone(now))));
+  await db.notes
+    .where('status')
+    .equals('deleted')
+    .filter((n) => (n.deletedAt ?? n.updatedAt) < now - TOMBSTONE_DAYS * DAY)
     .delete();
 }
 
