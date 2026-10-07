@@ -4,6 +4,7 @@ import { html, raw } from './lib/html';
 import { icon } from './lib/icons';
 import { drawingPreviewSvg } from './lib/draw';
 import { swipeDismiss } from './lib/swipe-dismiss';
+import { trapFocus } from './lib/focus-trap';
 
 /**
  * وضع القراءة: النقر على بطاقة يفتح ورقة قراءة بلا لوحة مفاتيح.
@@ -13,6 +14,7 @@ let isOpen = false;
 let hist = false;
 let urls: string[] = [];
 let wired = false;
+let release: (() => void) | null = null;
 
 export function isReaderOpen(): boolean {
   return isOpen;
@@ -28,6 +30,8 @@ window.addEventListener('popstate', () => {
 function hide() {
   if (!isOpen) return;
   isOpen = false;
+  release?.();
+  release = null;
   urls.forEach((u) => URL.revokeObjectURL(u));
   urls = [];
   const el = $('#reader');
@@ -102,6 +106,7 @@ export function openReader(n: Note, onEdit: (n: Note) => void): void {
   el.classList.add('flex');
   document.body.classList.add('overflow-hidden');
   isOpen = true;
+  release = trapFocus(el, { onEscape: () => closeReader(), initial: $('#rEdit') });
   try {
     history.pushState({ nawyNote: 'reader' }, '');
     hist = true;

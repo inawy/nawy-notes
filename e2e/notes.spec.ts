@@ -145,3 +145,29 @@ test('الحذف النهائي يترك شاهد حذف بلا محتوى ول�
   expect(typeof rows[0].deletedAt).toBe('number');
   expect(JSON.stringify(rows[0])).not.toContain('سري');
 });
+
+test('الوصولية: القائمة تحبس التركيز، وEsc يغلقها ويعيد التركيز للزر', async ({ page }) => {
+  await open(page);
+  await page.click('#btnMenu');
+  await expect(page.locator('#drawerRoot')).toBeVisible();
+  for (let i = 0; i < 12; i++) {
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => !!document.activeElement?.closest('#drawer'))).toBe(true);
+  }
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#drawerRoot')).toBeHidden();
+  await expect(page.locator('#btnMenu')).toBeFocused();
+});
+
+test('الوصولية: Esc يغلق وضع القراءة', async ({ page }) => {
+  await open(page);
+  await newNote(page, 'text');
+  await page.fill('#eTitle', 'للقراءة');
+  await expect(page.locator('#eSaved')).toContainText('محفوظة');
+  await page.click('#eDone');
+  await page.locator('.note-card').first().click();
+  await expect(page.locator('#reader')).toBeVisible();
+  await expect(page.locator('#rEdit')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#reader')).toBeHidden();
+});

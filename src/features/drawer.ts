@@ -1,9 +1,13 @@
 import { $ } from '../lib/util';
+import { trapFocus } from '../lib/focus-trap';
 
 /** القائمة الجانبية: تُفتح بزر القائمة، وتُغلق بالنقر خارجها أو على عنصر أو Esc أو السويب نحو حافتها. */
 export function mountDrawer(opts: { onOpen?: () => void } = {}): void {
+  let release: (() => void) | null = null;
   const set = (on: boolean) => {
     $('#drawerRoot').classList.toggle('hidden', !on);
+    release?.();
+    release = on ? trapFocus($('#drawer')) : null;
     $('#btnMenu').setAttribute('aria-expanded', String(on));
   };
   $('#btnMenu').onclick = () => {
