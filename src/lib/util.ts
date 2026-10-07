@@ -3,6 +3,14 @@ export const uid = (): string =>
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
+/** «ملاحظة واحدة / ملاحظتان / 3 ملاحظات / 11 ملاحظة» بالتصريف العربي الصحيح. */
+export function countNotes(n: number): string {
+  if (n === 0) return 'لا ملاحظات';
+  if (n === 1) return 'ملاحظة واحدة';
+  if (n === 2) return 'ملاحظتان';
+  return `${n.toLocaleString('ar-EG')} ${n <= 10 ? 'ملاحظات' : 'ملاحظة'}`;
+}
+
 export function esc(s: string): string {
   return s
     .replace(/&/g, '&amp;')

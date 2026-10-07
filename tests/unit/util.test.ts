@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { debounce, esc, normalize } from '../../src/lib/util';
+import { countNotes, debounce, esc, normalize } from '../../src/lib/util';
 
 describe('esc', () => {
   it('يهرّب رموز HTML الخمسة', () => {
@@ -46,5 +46,16 @@ describe('debounce', () => {
     d.cancel();
     vi.advanceTimersByTime(500);
     expect(fn).not.toHaveBeenCalled();
+  });
+});
+
+describe('countNotes (تصريف عربي)', () => {
+  it('يصرّف العدد', () => {
+    expect(countNotes(0)).toBe('لا ملاحظات');
+    expect(countNotes(1)).toBe('ملاحظة واحدة');
+    expect(countNotes(2)).toBe('ملاحظتان');
+    expect(countNotes(5)).toContain('ملاحظات');
+    expect(countNotes(11)).toContain('ملاحظة');
+    expect(countNotes(11)).not.toContain('ملاحظات');
   });
 });

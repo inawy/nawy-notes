@@ -171,3 +171,15 @@ test('الوصولية: Esc يغلق وضع القراءة', async ({ page }) =>
   await page.keyboard.press('Escape');
   await expect(page.locator('#reader')).toBeHidden();
 });
+
+test('ترويسة القسم تعرّف بالصفحة (الأرشيف والمهملات)', async ({ page }) => {
+  await open(page);
+  await expect(page.locator('#viewHeader')).toBeHidden();
+  await page.click('#btnMenu');
+  await page.click('#tabs [data-view="archive"]');
+  await expect(page.locator('#vhTitle')).toHaveText('الأرشيف');
+  await page.click('#btnMenu');
+  await page.click('#tabs [data-view="trash"]');
+  await expect(page.locator('#vhTitle')).toHaveText('المهملات');
+  await expect(page.locator('#vhHint')).toContainText('30 يوماً');
+});

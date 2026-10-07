@@ -13,7 +13,7 @@ import {
   reorderNotes,
   setStatus,
 } from './db';
-import { $, debounce } from './lib/util';
+import { $, countNotes, debounce } from './lib/util';
 import { icon } from './lib/icons';
 import { toast } from './lib/toast';
 import { appReady, dbMessage, reportError } from './lib/report';
@@ -158,15 +158,14 @@ function render(notes: Note[]) {
   const e = $('#empty');
   e.classList.toggle('hidden', !empty);
   e.classList.toggle('flex', empty);
+  $('#emptyIcon').innerHTML = icon(query ? 'search' : VIEW_ICON[view], 'w-10 h-10');
   $('#emptyText').textContent = query
     ? 'لا نتائج مطابقة'
     : { notes: 'لا توجد ملاحظات بعد', archive: 'الأرشيف فارغ', trash: 'المهملات فارغة' }[view];
 
   $('#fabRoot').classList.toggle('hidden', view !== 'notes');
   if (view !== 'notes') toggleFab(false);
-  const showTrashBar = view === 'trash' && !empty;
-  $('#trashBar').classList.toggle('hidden', !showTrashBar);
-  $('#trashBar').classList.toggle('flex', showTrashBar);
+  renderViewHeader(notes.length);
   document.querySelectorAll<HTMLElement>('#tabs .tab').forEach((t) => {
     if (t.dataset.view === view) {
       t.setAttribute('aria-current', 'page');
@@ -181,6 +180,44 @@ function render(notes: Note[]) {
     void m.offsetWidth;
     m.classList.add('view-enter');
   }
+}
+
+// ---------- ترويسة القسم (الأرشيف/المهملات) ----------
+const VIEW_HINT: Record<View, string> = {
+  notes: '',
+  archive: 'ملاحظات محفوظة بعيداً عن الشاشة الرئيسية',
+  trash: 'تُحذف نهائياً بعد 30 يوماً',
+};
+
+function renderViewHeader(count: number) {
+  const h = $('#viewHeader');
+  const show = view !== 'notes';
+  h.classList.toggle('hidden', !show);
+  h.classList.toggle('flex', show);
+  $('#vhHint').classList.toggle('hidden', !show || !!query);
+  if (!show) return;
+  $('#vhHint').textContent = VIEW_HINT[view];
+  const trash = view === 'trash';
+  $('#vhIcon').innerHTML = icon(VIEW_ICON[view], 'w-6 h-6');
+  $('#vhIcon').className =
+    'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ' +
+    (trash
+      ? 'bg-red-50 text-red-500 dark:bg-red-500/15 dark:text-red-400'
+      : 'bg-brand-50 text-brand-600 dark:bg-brand-500/20 dark:text-brand-300');
+  $('#vhTitle').textContent = VIEW_LABEL[view];
+  $('#vhSub').textContent = query ? (count ? `${countNotes(count)} مطابقة` : 'لا نتائج مطابقة') : countNotes(count);
+  const btn = $('#btnEmptyTrash');
+  const canEmpty = trash && count > 0 && !query;
+  btn.classList.toggle('hidden', !canEmpty);
+  btn.classList.toggle('inline-flex', canEmpty);
+  btn.innerHTML = icon('trash', 'w-4 h-4') + '<span>إفراغ</span>';
+  // نقاط التنقّل: تُلمّح أن بين الأقسام سويباً جانبياً
+  $('#vhDots').innerHTML = VIEW_ORDER.map(
+    (v) =>
+      `<span class="h-1.5 rounded-full transition-all ${
+        v === view ? 'w-4 bg-brand-500' : 'w-1.5 bg-slate-300 dark:bg-slate-600'
+      }"></span>`,
+  ).join('');
 }
 
 // ---------- ترتيب بالسحب والإفلات ----------
