@@ -22,68 +22,9 @@
           document.querySelector('meta[name=theme-color]').setAttribute('content', '{{brand.pageDark}}');
         }
       } catch (e) {}
-      // الشاشة تظهر عند أول فتح فقط؛ أي تحديث للصفحة لاحقاً يتخطاها قبل أن تُرسم
-      try {
-        if (sessionStorage.getItem('nawy-note:splash')) {
-          window.__nawySeen = true;
-          document.documentElement.classList.add('no-splash');
-        } else sessionStorage.setItem('nawy-note:splash', '1');
-      } catch (e) {}
     </script>
-    <style>
-      .no-splash #splash {
-        display: none !important;
-      }
-      /* شاشة البداية: بلون الأيقونة، أيقونة ثابتة بلا حركة، وتظهر في أول فتح فقط */
-      #splash {
-        position: fixed;
-        inset: 0;
-        z-index: 90;
-        background: {{brand.brand500}};
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 18px;
-        transition:
-          opacity 0.4s ease,
-          visibility 0.4s;
-      }
-      #splash.out {
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-      }
-      #splash svg {
-        width: min(46vw, 200px);
-        height: auto;
-        overflow: visible;
-      }
-      #splash .sp-name {
-        color: #fff;
-        font:
-          600 20px/1 'IBM Plex Sans Arabic',
-          'Segoe UI',
-          Tahoma,
-          system-ui,
-          sans-serif;
-        letter-spacing: 0.2px;
-      }
-    </style>
   </head>
   <body class="min-h-dvh overflow-x-hidden bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
-    <div id="splash" aria-hidden="true">
-      <svg viewBox="176 128 672 768" xmlns="http://www.w3.org/2000/svg">
-        <clipPath id="spPaper"><path d="M272.00 128.00L752.00 128.00A96.00 96.00 0 0 1 848.00 224.00L848.00 644.67L692.67 896.00L272.00 896.00A96.00 96.00 0 0 1 176.00 800.00L176.00 224.00A96.00 96.00 0 0 1 272.00 128.00Z"/></clipPath>
-        <path d="M272.00 128.00L752.00 128.00A96.00 96.00 0 0 1 848.00 224.00L848.00 644.67L692.67 896.00L272.00 896.00A96.00 96.00 0 0 1 176.00 800.00L176.00 224.00A96.00 96.00 0 0 1 272.00 128.00Z" fill="#FFFFFF"/>
-        <path d="M724.67 644.67L1092.67 644.67L692.67 1044.67L692.67 676.67A32.00 32.00 0 0 1 724.67 644.67Z" fill="#C5D7FF" clip-path="url(#spPaper)"/>
-        <circle cx="332.00" cy="284.00" r="60.00" fill="#3D7BFF"/>
-        <path d="M392.00 344.00L437.84 344.00L512.00 224.00L466.16 224.00L392.00 344.00Z" fill="#3D7BFF"/>
-        <path d="M272.00 488.87L752.00 488.87L752.00 429.53L272.00 429.53L272.00 488.87Z" fill="#C5D7FF"/>
-        <path d="M272.00 594.47L608.00 594.47L608.00 535.13L272.00 535.13L272.00 594.47Z" fill="#C5D7FF"/>
-      </svg>
-      <div class="sp-name">ناوي نوت</div>
-    </div>
     <script>
       // شريط أخطاء مرئي: يعمل حتى لو فشل تحميل شيفرة التطبيق نفسها
       (function () {
@@ -112,39 +53,15 @@
           msg = String(msg);
           if (seen[msg]) return;
           seen[msg] = 1;
-          var spl = document.getElementById('splash');
-          if (spl) {
-            spl.classList.add('out');
-          }
           var p = document.createElement('p');
           p.style.margin = '4px 0';
           p.textContent = msg;
           if (tag) p.setAttribute('data-tag', tag);
           box().querySelector('#fatalList').appendChild(p);
         }
-        // شاشة البداية: تبقى مدة كافية لتكتمل الحركة في أول فتح، وتختفي فوراً تقريباً في الفتحات التالية
-        var t0 = Date.now(),
-          meta = document.querySelector('meta[name=theme-color]'),
-          prevColor = meta && meta.getAttribute('content'),
-          visited = !!window.__nawySeen;
-        if (meta && !visited) meta.setAttribute('content', '{{brand.brand500}}');
-        function hideSplash() {
-          var sp = document.getElementById('splash');
-          if (!sp) return;
-          var wait = visited ? 0 : Math.max(0, 700 - (Date.now() - t0));
-          setTimeout(function () {
-            sp.classList.add('out');
-            if (meta && prevColor)
-              meta.setAttribute('content', document.documentElement.classList.contains('dark') ? '{{brand.pageDark}}' : '{{brand.pageLight}}');
-            setTimeout(function () {
-              sp.remove();
-            }, 450);
-          }, wait);
-        }
         window.__nawyReport = report;
         window.__nawyDone = function () {
           window.__nawyReady = true;
-          hideSplash();
           var b = document.getElementById('fatal');
           if (!b) return;
           b.querySelectorAll('[data-tag=watchdog]').forEach(function (p) {

@@ -202,3 +202,9 @@ test('إجراءات سريعة في وضع القراءة: أرشفة مع تر
   await page.click('#rTrash');
   await expect(page.locator('.note-card')).toHaveCount(0);
 });
+
+test('لا شاشة سبلاش داخلية: الواجهة جاهزة مباشرة', async ({ page }) => {
+  await page.goto('./');
+  expect(await page.locator('#splash').count()).toBe(0);
+  await expect(page.locator('#fab')).toBeVisible();
+});
