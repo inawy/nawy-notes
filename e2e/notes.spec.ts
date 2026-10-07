@@ -183,3 +183,22 @@ test('ترويسة القسم تعرّف بالصفحة (الأرشيف والم
   await expect(page.locator('#vhTitle')).toHaveText('المهملات');
   await expect(page.locator('#vhHint')).toContainText('30 يوماً');
 });
+
+test('إجراءات سريعة في وضع القراءة: أرشفة مع تراجع ثم حذف', async ({ page }) => {
+  await open(page);
+  await newNote(page, 'text');
+  await page.fill('#eTitle', 'إجراء سريع');
+  await expect(page.locator('#eSaved')).toContainText('محفوظة');
+  await page.click('#eDone');
+
+  await page.locator('.note-card').first().click();
+  await page.click('#rArchive');
+  await expect(page.locator('#reader')).toBeHidden();
+  await expect(page.locator('.note-card')).toHaveCount(0);
+  await page.click('#toast button'); // تراجع
+  await expect(page.locator('.note-card')).toHaveCount(1);
+
+  await page.locator('.note-card').first().click();
+  await page.click('#rTrash');
+  await expect(page.locator('.note-card')).toHaveCount(0);
+});

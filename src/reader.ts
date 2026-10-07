@@ -5,6 +5,9 @@ import { icon } from './lib/icons';
 import { drawingPreviewSvg } from './lib/draw';
 import { swipeDismiss } from './lib/swipe-dismiss';
 import { trapFocus } from './lib/focus-trap';
+import { setStatus, restoreState } from './db';
+import { shareNote } from './lib/share';
+import { toast } from './lib/toast';
 
 /**
  * وضع القراءة: النقر على بطاقة يفتح ورقة قراءة بلا لوحة مفاتيح.
@@ -90,10 +93,14 @@ export function openReader(n: Note, onEdit: (n: Note) => void): void {
   card.style.cssText = ''; // يزيل أثر سحب سابق
   card.className = `sheet-enter relative flex max-h-[92dvh] min-h-[50dvh] w-full flex-col overflow-hidden rounded-t-[26px] border border-black/5 sm:max-w-xl sm:rounded-3xl dark:border-white/10 nc-${n.color}`;
   $('#readerBody').innerHTML = String(html`
-    <div class="flex shrink-0 items-center gap-1 px-2 pt-2">
+    <div class="flex shrink-0 items-center gap-0.5 px-2 pt-2">
       <button type="button" id="rClose" class="btn-icon !h-12 !w-12 !rounded-full" aria-label="إغلاق">${raw(icon('x', 'w-6 h-6'))}</button>
       <span class="flex-1"></span>
-      <button type="button" id="rEdit" class="flex h-11 items-center gap-2 rounded-full bg-brand-500 px-5 text-sm font-medium text-white active:scale-95">${raw(icon('pencil', 'w-4 h-4'))} تعديل</button>
+      <button type="button" id="rShare" class="btn-icon !rounded-full" title="مشاركة" aria-label="مشاركة">${raw(icon('share', 'w-5 h-5'))}</button>
+      <button type="button" id="rArchive" class="btn-icon !rounded-full" title="${n.status === 'archived' ? 'إلغاء الأرشفة' : 'أرشفة'}" aria-label="${n.status === 'archived' ? 'إلغاء الأرشفة' : 'أرشفة'}">${raw(icon('archive', 'w-5 h-5'))}</button>
+      <button type="button" id="rTrash" class="btn-icon !rounded-full hover:!text-red-500" title="حذف" aria-label="نقل للمهملات">${raw(icon('trash', 'w-5 h-5'))}</button>
+      <span class="mx-1 h-6 w-px bg-black/10 dark:bg-white/15" aria-hidden="true"></span>
+      <button type="button" id="rEdit" class="flex h-11 items-center gap-2 rounded-full bg-brand-500 px-4 text-sm font-medium text-white active:scale-95">${raw(icon('pencil', 'w-4 h-4'))} تعديل</button>
     </div>
     <div id="rContent" class="min-h-0 flex-1 cursor-text overflow-y-auto overscroll-contain px-5 pb-8 pt-3">
       ${n.title ? html`<h2 class="mb-4 break-words text-2xl font-semibold leading-snug">${n.title}</h2>` : ''}
@@ -120,6 +127,17 @@ export function openReader(n: Note, onEdit: (n: Note) => void): void {
   };
   $('#rClose').onclick = () => closeReader();
   $('#rEdit').onclick = edit;
+  $('#rShare').onclick = () => void shareNote(n);
+  const leave = (status: 'active' | 'archived' | 'trashed', msg: string) => {
+    const prev = { status: n.status, pinned: n.pinned };
+    closeReader();
+    void setStatus(n.id, status).then(() =>
+      toast(msg, { label: 'تراجع', run: () => void restoreState(n.id, prev.status, prev.pinned) }),
+    );
+  };
+  $('#rArchive').onclick = () =>
+    n.status === 'archived' ? leave('active', 'أُعيدت من الأرشيف') : leave('archived', 'تمت الأرشفة');
+  $('#rTrash').onclick = () => leave('trashed', 'نُقلت إلى المهملات');
   $('#rContent').onclick = (e) => {
     const t = e.target as HTMLElement;
     if (t.closest('audio, button')) return;

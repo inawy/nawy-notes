@@ -144,3 +144,6 @@
 ## توثيق المشروع للزملاء والوكلاء
 - `AGENTS.md` (المرجع الوحيد؛ `CLAUDE.md` يستورده)، `docs/architecture.md`، ومهارات ووكلاء في `.claude/` (verify, data-change, ui-conventions, release-pwa؛ nawy-reviewer, nawy-test-writer) + `.claude/settings.json` بأذونات أوامر آمنة، و`.editorconfig` وقالب PR.
 - المكدّس موثَّق بصدق: TypeScript + Vite + Tailwind + Dexie بلا React؛ إدخال إطار يتطلب قراراً مسجّلاً هنا.
+
+## إجراءات سريعة في ورقة القراءة
+- بجانب «تعديل»: مشاركة (ورقة النظام وإلا نسخ للحافظة؛ نص فقط، القوائم بـ ☐/☑)، أرشفة/إلغاء أرشفة، نقل للمهملات؛ كلها أيقونات SVG مع `aria-label`، والأرشفة والحذف يعرضان «تراجع».
