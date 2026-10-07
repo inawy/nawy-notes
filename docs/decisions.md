@@ -110,7 +110,7 @@
 
 ## ESLint (flat config)
 - `eslint.config.js`: recommended من `@eslint/js` + `typescript-eslint`، و`eslint-config-prettier` لتجنّب التعارض مع Prettier.
-- خطوة lint في CI `continue-on-error` مؤقتاً؛ تصبح مانعة بعد تنظيف التحذيرات.
+- خطوة lint في CI مانعة للنشر (نتيجة التشغيل الأول: صفر تحذيرات).
 
 ## قالب `html` يهرّب تلقائياً
 - `src/lib/html.ts`: وسم قالب يهرّب كل قيمة نصية؛ المحتوى الموثوق فقط (`html` متداخل أو `raw()` للأيقونات وSVG) يمرّ كما هو. يمنع نسيان `esc()`.
