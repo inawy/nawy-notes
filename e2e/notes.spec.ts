@@ -251,3 +251,24 @@ test('ملاحظة معطوبة لا تُفرغ الشاشة: الباقي يظ�
   await expect(page.locator('.note-card', { hasText: 'سليمة' })).toBeVisible();
   await expect(page.locator('.note-card', { hasText: 'تعذّر عرض محتواها' })).toBeVisible();
 });
+
+test.describe('سطح المكتب: شريط جانبي ثابت قابل للطي', () => {
+  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+
+  test('ظاهر افتراضياً، يبقى عند التنقل، يُطوى ويُحفظ الاختيار', async ({ page }) => {
+    await open(page);
+    await expect(page.locator('#drawer')).toBeVisible();
+    await page.click('#tabs [data-view="archive"]');
+    await expect(page.locator('#vhTitle')).toHaveText('الأرشيف');
+    await expect(page.locator('#drawer')).toBeVisible(); // لا يُغلق بعد النقر
+
+    await page.click('#btnMenu');
+    await expect(page.locator('#drawer')).toBeHidden();
+    await page.reload();
+    await page.waitForSelector('#fab');
+    await expect(page.locator('#drawer')).toBeHidden(); // الاختيار محفوظ
+
+    await page.click('#btnMenu');
+    await expect(page.locator('#drawer')).toBeVisible();
+  });
+});

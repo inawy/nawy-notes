@@ -499,3 +499,49 @@ main {
     transition: none;
   }
 }
+
+/* ===== الشاشات العريضة: شريط جانبي ثابت قابل للطي (مثل تطبيقات سطح المكتب) ===== */
+@media (min-width: 1024px) {
+  #drawerRoot {
+    display: none !important;
+    inset: 0 auto 0 auto;
+    inset-inline-start: 0;
+    width: 17rem;
+    z-index: 20;
+    pointer-events: none;
+  }
+  html.sb-open #drawerRoot {
+    display: block !important;
+  }
+  #drawerBackdrop {
+    display: none;
+  }
+  #drawer {
+    pointer-events: auto;
+    width: 17rem;
+    max-width: none;
+    animation: none;
+    border-inline-end: 1px solid rgb(0 0 0 / 0.07);
+    background-color: #fff;
+  }
+  html.dark #drawer {
+    border-inline-end-color: rgb(255 255 255 / 0.08);
+    background-color: var(--color-slate-900);
+  }
+  /* المحتوى يترك مكاناً للشريط، وينتقل بنعومة عند الطي */
+  body {
+    transition: padding-inline-start 0.22s var(--ease-out);
+  }
+  html.sb-open body {
+    padding-inline-start: 17rem;
+  }
+  /* لا حاجة لنقاط السويب على الحاسوب */
+  #vhDots {
+    display: none;
+  }
+}
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  body {
+    transition: none;
+  }
+}
