@@ -34,9 +34,8 @@ jobs:
           path: dist
 
   e2e:
-    # اختبارات المتصفح الحقيقي: غير مانعة للنشر حتى تثبت استقرارها
+    # اختبارات المتصفح الحقيقي (IndexedDB حقيقية): فشلها يوقف النشر
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,7 +53,7 @@ jobs:
           path: test-results
 
   deploy:
-    needs: build
+    needs: [build, e2e]
     if: github.event_name != 'pull_request' # الطلبات تُفحص فقط ولا تُنشر
     runs-on: ubuntu-latest
     environment:
