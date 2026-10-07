@@ -250,7 +250,12 @@ function mountSortables() {
         delay: 130, // على اللمس: ضغطة قصيرة للسحب حتى لا يتعارض مع التمرير
         delayOnTouchOnly: true,
         touchStartThreshold: 12, // يسمح بارتجاف الإصبع قبل أن تبدأ الضغطة
-        fallbackTolerance: 3,
+        // سحب مبني على أحداث المؤشر لكل الأجهزة: السحب الأصلي (HTML5) في المتصفحات المكتبية
+        // يربك الشبكة (ظل المتصفح، قفزات التبديل) ولا يطابق سلوك اللمس.
+        forceFallback: true,
+        fallbackOnBody: true,
+        fallbackClass: 'sortable-fallback',
+        fallbackTolerance: 5,
         swapThreshold: 0.5,
         filter: 'audio, button, input, textarea, a',
         preventOnFilter: false,

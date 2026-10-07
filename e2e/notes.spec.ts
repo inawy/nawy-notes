@@ -272,3 +272,35 @@ test.describe('سطح المكتب: شريط جانبي ثابت قابل للط
     await expect(page.locator('#drawer')).toBeVisible();
   });
 });
+
+test.describe('سطح المكتب: السحب بالفأرة لإعادة الترتيب', () => {
+  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+
+  test('سحب البطاقة الأولى إلى آخر الشبكة يغيّر الترتيب ويبقى بعد التحميل', async ({ page }) => {
+    await open(page);
+    for (const t of ['أ', 'ب', 'ج']) {
+      await newNote(page, 'text');
+      await page.fill('#eTitle', t);
+      await expect(page.locator('#eSaved')).toContainText('محفوظة');
+      await page.click('#eDone');
+      await expect(page.locator('.note-card', { hasText: t })).toBeVisible();
+    }
+    const titles = () => page.locator('#grid .note-card h3').allInnerTexts();
+    expect(await titles()).toEqual(['ج', 'ب', 'أ']); // الأحدث أولاً
+
+    const cards = page.locator('#grid .note-card');
+    const a = (await cards.nth(0).boundingBox())!;
+    const c = (await cards.nth(2).boundingBox())!;
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(a.x + a.width / 2 - 20, a.y + a.height / 2, { steps: 4 });
+    await page.mouse.move(c.x + c.width * 0.7, c.y + c.height / 2, { steps: 20 });
+    await page.mouse.up();
+
+    await expect.poll(titles).not.toEqual(['ج', 'ب', 'أ']);
+    const after = await titles();
+    await page.reload();
+    await page.waitForSelector('#fab');
+    expect(await titles()).toEqual(after);
+  });
+});
