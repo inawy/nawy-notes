@@ -99,3 +99,16 @@ test('ترحيل: قاعدة قديمة (v1) تُفتح وتظهر ملاحظا�
   await page.locator('.note-card', { hasText: 'ملاحظة قديمة' }).click();
   await expect(page.locator('#rContent')).toContainText('نص');
 });
+
+test('ألوان العلامة: لا رموز {{brand}} متبقية والخلفية من brand.json', async ({ page }) => {
+  const res = await page.goto('./');
+  expect(await res!.text()).not.toContain('{{brand');
+  await page.waitForSelector('#fab');
+  const css = await page.evaluate(async () => {
+    const hrefs = [...document.querySelectorAll('link[rel=stylesheet]')].map((l) => (l as HTMLLinkElement).href);
+    return (await Promise.all(hrefs.map((h) => fetch(h).then((r) => r.text())))).join('\n');
+  });
+  expect(css).not.toContain('{{brand');
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor)).toBe('rgb(248, 250, 252)');
+  expect(await page.getAttribute('meta[name=theme-color]', 'content')).toBe('#f8fafc');
+});

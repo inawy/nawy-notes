@@ -9,14 +9,14 @@
   --color-brand-100: #dbe7ff;
   --color-brand-300: #9dbfff;
   --color-brand-400: #6b9aff;
-  --color-brand-500: #3d7bff;
+  --color-brand-500: {{brand.brand500}};
   --color-brand-600: #2b63e6;
   --color-brand-950: #12275a;
   /* الوضع الليلي رمادي محايد بلا ميل للأزرق (يستبدل درجات slate الداكنة) */
   --color-slate-700: #3a3a3c;
   --color-slate-800: #2a2a2c;
   --color-slate-900: #1c1c1e;
-  --color-slate-950: #121212;
+  --color-slate-950: {{brand.pageDark}};
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --font-sans: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
   --shadow-card: 0 1px 3px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.06);
@@ -382,11 +382,11 @@ img {
 
 /* خلفية على html نفسه: تملأ كل الشاشة بما فيها منطقة شريط التنقل السفلي */
 html {
-  background-color: #f8fafc;
+  background-color: {{brand.pageLight}};
   min-height: 100%;
 }
 html.dark {
-  background-color: #121212;
+  background-color: {{brand.pageDark}};
 }
 main {
   touch-action: pan-y;

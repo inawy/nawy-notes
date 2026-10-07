@@ -1,8 +1,9 @@
+import brand from '../../brand.json';
 import { $ } from '../lib/util';
 import { icon } from '../lib/icons';
 
 /** لون شريط الحالة = لون خلفية الصفحة (index.html يكرّره في السكربت المبكر قبل تحميل الوحدات). */
-export const THEME_COLOR = { light: '#f8fafc', dark: '#121212' } as const;
+export const THEME_COLOR = { light: brand.pageLight, dark: brand.pageDark } as const;
 const THEME_KEY = 'nawy-note:theme';
 
 export function syncTheme(): void {

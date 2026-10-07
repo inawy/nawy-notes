@@ -1,11 +1,32 @@
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import type { Plugin } from 'vite';
+import brand from './brand.json';
+
+/** يستبدل {{brand.x}} في index.html وملفات CSS بقيم brand.json: مصدر واحد للألوان. */
+function brandTokens(): Plugin {
+  const fill = (s: string) =>
+    s.replace(/\{\{brand\.(\w+)\}\}/g, (_, k: string) => {
+      const v = (brand as Record<string, string>)[k];
+      if (!v) throw new Error(`brand.json: مفتاح غير معروف ${k}`);
+      return v;
+    });
+  return {
+    name: 'nawy-brand-tokens',
+    enforce: 'pre',
+    transformIndexHtml: { order: 'pre', handler: fill },
+    transform(code, id) {
+      return id.split('?')[0].endsWith('.css') ? fill(code) : null;
+    },
+  };
+}
 
 // base './' => يعمل على GitHub Pages (مسار مشروع فرعي) وعلى نطاق مخصص مثل nawy.app بدون تغيير.
 export default defineConfig({
   base: './',
   plugins: [
+    brandTokens(),
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
@@ -27,8 +48,8 @@ export default defineConfig({
         start_url: './',
         scope: './',
         display: 'standalone',
-        background_color: '#f8fafc',
-        theme_color: '#f8fafc',
+        background_color: brand.pageLight,
+        theme_color: brand.pageLight,
         // الضغط المطوّل على الأيقونة: إجراءات سريعة تفتح المحرر مباشرة
         shortcuts: [
           {
