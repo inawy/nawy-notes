@@ -121,7 +121,9 @@ export async function emptyTrash(): Promise<void> {
   await db.notes
     .where('status')
     .equals('trashed')
-    .modify((n) => Object.assign(n, structuredClone(t)));
+    .modify((n) => {
+      Object.assign(n, structuredClone(t));
+    });
 }
 
 /** يحذف ملاحظات المهملات القديمة (إلى شواهد) وينظّف الشواهد المنتهية. */
@@ -132,7 +134,9 @@ export async function purgeOldTrash(): Promise<void> {
     .where('status')
     .equals('trashed')
     .filter((n) => (n.trashedAt ?? 0) < cutoff)
-    .modify((n) => Object.assign(n, structuredClone(tombstone(now))));
+    .modify((n) => {
+      Object.assign(n, structuredClone(tombstone(now)));
+    });
   await db.notes
     .where('status')
     .equals('deleted')
