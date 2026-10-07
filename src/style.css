@@ -464,23 +464,24 @@ main {
   border-radius: 0.75rem;
 }
 
-/* حالات السحب (SortableJS) */
-.drag-chosen {
-  box-shadow: 0 14px 28px -10px rgb(0 0 0 / 0.28);
-  cursor: grabbing;
-  z-index: 5;
-}
+/* حالات السحب والإفلات (src/lib/reorder.ts) */
 .note-card img {
   -webkit-user-drag: none;
   pointer-events: none;
 }
-.sortable-fallback {
-  opacity: 0.95 !important;
+/* الظل الطافي الذي يتبع المؤشر */
+.reorder-ghost {
+  opacity: 0.96;
   cursor: grabbing;
-  pointer-events: none;
-  box-shadow: 0 18px 32px -12px rgb(0 0 0 / 0.35);
-  transform-origin: center;
+  box-shadow: 0 18px 34px -12px rgb(0 0 0 / 0.38);
+  will-change: transform;
 }
+body.reordering,
+body.reordering * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+/* خانة العنصر المسحوب: أثر باهت يبيّن مكان الإسقاط */
 .drag-ghost {
   opacity: 0.35;
 }

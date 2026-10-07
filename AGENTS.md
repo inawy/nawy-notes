@@ -15,7 +15,7 @@
 | الواجهة | **TypeScript عادي + DOM** (لا React ولا أي إطار) | إدخال إطار قرار معماري يُسجَّل في `docs/decisions.md` أولاً |
 | التنسيق | **Tailwind v4** (`@theme` في `src/style.css`) + خصائص منطقية | ألوان العلامة من `brand.json` |
 | التخزين | **Dexie 4** (IndexedDB) | الحقيقة الوحيدة للبيانات |
-| رسم / ترتيب | `perfect-freehand` / `sortablejs` | |
+| رسم / ترتيب | `perfect-freehand` / `src/lib/reorder.ts` (سحب وإفلات مكتوب داخلياً، يعمل في RTL) | لا Sortable |
 | الاختبار | `node:test` + **vitest** (وحدات) + **Playwright** (e2e) | CI يشغّلها كلها |
 | الجودة | ESLint (flat config) + Prettier | فشلها يوقف النشر |
 
@@ -59,7 +59,7 @@ e2e/                  Playwright على النسخة المبنية بـ Indexed
 6. RTL دائماً: خصائص منطقية (`ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`/`inset-inline`) لا `left/right`. `start-0` = اليمين.
 7. أهداف اللمس ≥ 44px. أيقونات SVG من `lib/icons.ts` فقط (لا إيموجي للواجهة، ولا مكتبات أيقونات).
 8. الألوان: لا hex مكرّر. ألوان الصفحة/العلامة من `brand.json`، والباقي رموز `@theme`. ادعم الوضع الداكن (`dark:`) في كل عنصر جديد.
-9. لا تضف transitions على `.note-card` (تتعارض مع سحب/ترتيب Sortable).
+9. لا تضف CSS transitions على `.note-card` (تتعارض مع حركة إعادة الترتيب `lib/reorder.ts` التي تستخدم Web Animations).
 10. نوافذ/قوائم جديدة: `role="dialog"` + `trapFocus` + إغلاق بـ Esc.
 
 **PWA والنشر**

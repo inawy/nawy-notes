@@ -1,6 +1,6 @@
 import './style.css';
 import { liveQuery, type Subscription } from 'dexie';
-import Sortable from 'sortablejs';
+import { makeReorderable } from './lib/reorder';
 import type { Layout, Note, SortDir, SortMode, View } from './types';
 import {
   db,
@@ -233,34 +233,20 @@ function renderViewHeader(count: number) {
 }
 
 // ---------- ترتيب بالسحب والإفلات ----------
-let sortables: Sortable[] = [];
+let sortables: (() => void)[] = [];
 let dragging = false;
 
 function mountSortables() {
-  sortables.forEach((s) => s.destroy());
+  sortables.forEach((off) => off());
   sortables = [];
   if (view === 'trash' || sortMode !== 'manual') return; // السحب فقط في الترتيب اليدوي
   for (const sel of ['#pinnedGrid', '#grid']) {
     const el = $(sel);
-    if (!el.children.length) continue;
     sortables.push(
-      Sortable.create(el, {
-        animation: 180,
-        easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
-        delay: 130, // على اللمس: ضغطة قصيرة للسحب حتى لا يتعارض مع التمرير
-        delayOnTouchOnly: true,
-        touchStartThreshold: 12, // يسمح بارتجاف الإصبع قبل أن تبدأ الضغطة
-        // سحب مبني على أحداث المؤشر لكل الأجهزة: السحب الأصلي (HTML5) في المتصفحات المكتبية
-        // يربك الشبكة (ظل المتصفح، قفزات التبديل) ولا يطابق سلوك اللمس.
-        forceFallback: true,
-        fallbackOnBody: true,
-        fallbackClass: 'sortable-fallback',
-        fallbackTolerance: 5,
-        swapThreshold: 0.5,
-        filter: 'audio, button, input, textarea, a',
-        preventOnFilter: false,
-        chosenClass: 'drag-chosen',
-        ghostClass: 'drag-ghost',
+      makeReorderable(el, {
+        item: '.note-card',
+        ignore: 'audio, button, input, textarea, a',
+        touchDelay: 130, // ضغطة قصيرة للسحب حتى لا يتعارض مع التمرير
         onStart: () => {
           dragging = true;
           try {
@@ -269,9 +255,9 @@ function mountSortables() {
             /* غير مدعوم */
           }
         },
-        onEnd: (evt: { oldIndex?: number; newIndex?: number }) => {
+        onEnd: (changed) => {
           setTimeout(() => (dragging = false), 80); // يمنع نقرة "الإفلات" من فتح المحرر
-          if (evt.oldIndex === evt.newIndex) return;
+          if (!changed) return;
           const ids = [...el.querySelectorAll<HTMLElement>(':scope > .note-card')].map((c) => c.dataset.id!);
           void reorderNotes(ids).then(refreshNow);
         },

@@ -293,7 +293,7 @@ test.describe('سطح المكتب: السحب بالفأرة لإعادة ال�
     const c = (await cards.nth(2).boundingBox())!;
     await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
     await page.mouse.down();
-    // Sortable يفحص الهدف بمؤقّت كل ~50ms أثناء السحب؛ نمنحه وقتاً كالمستخدم الحقيقي
+    // حركة بطيئة نسبياً كالمستخدم الحقيقي
     await page.mouse.move(a.x + a.width / 2 - 20, a.y + a.height / 2, { steps: 4 });
     await page.waitForTimeout(120);
     const tx = c.x + c.width * 0.6;
