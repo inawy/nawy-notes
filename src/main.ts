@@ -16,6 +16,7 @@ import {
 import { $, countNotes, debounce } from './lib/util';
 import { icon } from './lib/icons';
 import { toast } from './lib/toast';
+import { html } from './lib/html';
 import { appReady, dbMessage, reportError } from './lib/report';
 import { closeEditor, flushEditor, isEditorOpen, openEditor, setOnSaved } from './editor';
 import { cardHTML } from './views/card';
@@ -35,6 +36,7 @@ let sortDir: SortDir = 'desc';
 let layout: Layout = 'grid';
 let sub: Subscription | undefined;
 let cache = new Map<string, Note>();
+let firstRender = false;
 
 const VIEW_ICON = { notes: 'notes', archive: 'archive', trash: 'trash' } as const;
 const VIEW_LABEL: Record<View, string> = { notes: 'الملاحظات', archive: 'الأرشيف', trash: 'المهملات' };
@@ -140,7 +142,17 @@ function blobUrl(b: Blob): string {
   return u;
 }
 
-const card = (n: Note): string => cardHTML(n, { trash: view === 'trash', layout, blobUrl });
+/** بطاقة واحدة معطوبة (بيانات غير متوقعة) لا يجوز أن تُفرغ الشاشة كلها: نعرض بديلاً بسيطاً. */
+const card = (n: Note): string => {
+  try {
+    return cardHTML(n, { trash: view === 'trash', layout, blobUrl });
+  } catch (err) {
+    console.error('تعذّر رسم ملاحظة', n.id, err);
+    return String(
+      html`<article class="note-card nc-default cursor-pointer overflow-hidden rounded-[18px] border border-black/[0.07] p-3 dark:border-white/10" data-id="${n.id}" tabindex="0"><h3 class="truncate text-[15px] font-semibold">${n.title || 'ملاحظة'}</h3><p class="mt-1 text-xs opacity-60">تعذّر عرض محتواها</p></article>`,
+    );
+  }
+};
 
 function render(notes: Note[]) {
   urls.forEach((u) => URL.revokeObjectURL(u));
@@ -271,7 +283,14 @@ function subscribe() {
   const sm = sortMode;
   const sd = sortDir;
   sub = liveQuery(() => listNotes(v, q, sm, sd)).subscribe({
-    next: render,
+    next: (notes) => {
+      firstRender = true;
+      try {
+        render(notes);
+      } catch (err) {
+        reportError(`تعذّر رسم القائمة: ${(err as Error)?.message ?? err}`);
+      }
+    },
     error: (err) => reportError(dbMessage(err)),
   });
 }
@@ -283,6 +302,7 @@ const VIEW_STATUS: Record<View, string> = { notes: 'active', archive: 'archived'
 async function refreshNow() {
   try {
     render(await listNotes(view, query, sortMode, sortDir));
+    firstRender = true;
   } catch (err) {
     reportError(dbMessage(err));
   }
@@ -472,6 +492,23 @@ function wire() {
   });
 }
 
+// ---------- شبكة أمان ضد الشاشة الفارغة ----------
+// أحياناً يتأخر IndexedDB أو يعلَق اتصاله بعد تحديث/إعادة تحميل؛ فنعيد المحاولة بدل ترك الشاشة بلا ملاحظات.
+function guardFirstRender() {
+  let tries = 0;
+  const t = setInterval(() => {
+    if (firstRender || ++tries > 4) return clearInterval(t);
+    void db.open().catch(() => {});
+    subscribe();
+    void refreshNow();
+  }, 1500);
+  const heal = () => {
+    if (document.visibilityState === 'visible') void refreshNow();
+  };
+  document.addEventListener('visibilitychange', heal);
+  window.addEventListener('pageshow', heal); // الرجوع من الذاكرة المؤقتة للصفحة
+}
+
 // ---------- البدء ----------
 db.on('blocked', () => reportError('هناك نافذة أخرى من التطبيق مفتوحة بنسخة قديمة. أغلقها ثم حدّث هذه الصفحة.'));
 db.open().catch((err) => reportError(dbMessage(err)));
@@ -480,6 +517,7 @@ loadPrefs();
 mountChrome();
 wire();
 subscribe();
+guardFirstRender();
 void purgeOldTrash();
 mountPwa();
 mountBackup();

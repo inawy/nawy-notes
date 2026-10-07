@@ -208,3 +208,46 @@ test('لا شاشة سبلاش داخلية: الواجهة جاهزة مباش�
   expect(await page.locator('#splash').count()).toBe(0);
   await expect(page.locator('#fab')).toBeVisible();
 });
+
+test('ملاحظة معطوبة لا تُفرغ الشاشة: الباقي يظهر وتظهر بطاقة بديلة', async ({ page }) => {
+  await open(page);
+  await newNote(page, 'text');
+  await page.fill('#eTitle', 'سليمة');
+  await expect(page.locator('#eSaved')).toContainText('محفوظة');
+  await page.click('#eDone');
+  await page.evaluate(
+    () =>
+      new Promise<void>((res, rej) => {
+        const r = indexedDB.open('nawy-note-db');
+        r.onerror = () => rej(r.error);
+        r.onsuccess = () => {
+          const tx = r.result.transaction('notes', 'readwrite');
+          const now = Date.now();
+          tx.objectStore('notes').put({
+            id: 'bad',
+            type: 'text',
+            title: 'معطوبة',
+            body: '',
+            items: [],
+            color: 'default',
+            pinned: false,
+            status: 'active',
+            order: -now - 1,
+            createdAt: now,
+            updatedAt: now,
+            trashedAt: null,
+            attachments: [{ id: 'd', kind: 'draw', blob: null, drawing: { width: 100, height: 100, strokes: [null] } }],
+          });
+          tx.oncomplete = () => {
+            r.result.close();
+            res();
+          };
+        };
+      }),
+  );
+  await page.reload();
+  await page.waitForSelector('#fab');
+  await expect(page.locator('.note-card')).toHaveCount(2);
+  await expect(page.locator('.note-card', { hasText: 'سليمة' })).toBeVisible();
+  await expect(page.locator('.note-card', { hasText: 'تعذّر عرض محتواها' })).toBeVisible();
+});
