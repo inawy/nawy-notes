@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import type { Plugin } from 'vite';
-import { createHash } from 'node:crypto';
 import brand from './brand.json';
 
 /** يستبدل {{brand.x}} في index.html وملفات CSS بقيم brand.json: مصدر واحد للألوان. */
@@ -34,10 +33,12 @@ function cspMeta(): Plugin {
     apply: 'build',
     transformIndexHtml: {
       order: 'post',
-      handler(html) {
-        const hashes = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(
-          (m) => `'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`,
-        );
+      async handler(html) {
+        // WebCrypto عام في Node ≥ 20: لا حاجة لـ @types/node
+        const sha = async (text: string) =>
+          btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))));
+        const bodies = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+        const hashes = await Promise.all(bodies.map(async (b) => `'sha256-${await sha(b)}'`));
         const csp = [
           "default-src 'self'",
           `script-src 'self' ${hashes.join(' ')}`,
