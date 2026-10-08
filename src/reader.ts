@@ -91,7 +91,7 @@ export function openReader(n: Note, onEdit: (n: Note) => void): void {
   const when = new Date(n.updatedAt).toLocaleString('ar', { dateStyle: 'medium', timeStyle: 'short' });
   const card = $('#readerCard');
   card.style.cssText = ''; // يزيل أثر سحب سابق
-  card.className = `sheet-enter relative flex max-h-[92dvh] min-h-[50dvh] w-full flex-col overflow-hidden rounded-t-[26px] border border-black/5 sm:max-w-xl sm:rounded-3xl dark:border-white/10 nc-${n.color}`;
+  card.className = `sheet-enter relative flex max-h-[92dvh] min-h-[50dvh] w-full flex-col overflow-hidden rounded-t-[26px] border border-black/5 sm:max-w-xl sm:rounded-3xl lg:max-w-2xl dark:border-white/10 nc-${n.color}`;
   $('#readerBody').innerHTML = String(html`
     <div class="flex shrink-0 items-center gap-0.5 px-2 pt-2">
       <button type="button" id="rClose" class="btn-icon !h-12 !w-12 !rounded-full" aria-label="إغلاق">${raw(icon('x', 'w-6 h-6'))}</button>

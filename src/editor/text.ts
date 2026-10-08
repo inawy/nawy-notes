@@ -37,7 +37,8 @@ export function renderText(n: Note, root: HTMLElement) {
   mountDictationTip(root, n);
   const fit = () => {
     ta.style.height = 'auto';
-    ta.style.height = Math.max(150, ta.scrollHeight) + 'px';
+    const min = window.matchMedia('(min-width: 1024px)').matches ? 300 : 150; // مساحة كتابة أوسع على الحاسوب
+    ta.style.height = Math.max(min, ta.scrollHeight) + 'px';
   };
   ta.addEventListener('input', () => {
     n.body = ta.value;

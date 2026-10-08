@@ -25,6 +25,7 @@ import { mountDrawer } from './features/drawer';
 import { handleLaunchIntent } from './features/launch';
 import { mountPwa } from './features/pwa';
 import { mountTabSwipe } from './features/tab-swipe';
+import { mountShortcuts } from './features/shortcuts';
 import { mountTheme, syncTheme } from './features/theme';
 import { preventNativeMenu } from './lib/app-feel';
 import { closeReader, isReaderOpen, openReader } from './reader';
@@ -411,6 +412,21 @@ function wire() {
     blocked: () => isEditorOpen() || isReaderOpen(),
   });
   mountDrawer({ onOpen: () => toggleSortMenu(false) });
+  mountShortcuts({
+    newNote: (type) => {
+      if (view !== 'notes') setView('notes');
+      create(type);
+    },
+    focusSearch: () => $('#search').focus(),
+    toggleLayout: () => $('#btnLayout').click(),
+    toggleSidebar: () => {
+      if (window.matchMedia('(min-width: 1024px)').matches) $('#btnMenu').click();
+    },
+    setView,
+    closeEditor: () => void closeEditor(),
+    isEditorOpen,
+    isDialogOpen: () => isReaderOpen() || !!document.getElementById('micHelp'),
+  });
   mountTheme();
   preventNativeMenu();
   $('#tabs').onclick = (e) => {
@@ -470,10 +486,6 @@ function wire() {
         toggleFab(false);
         toggleSortMenu(false);
       }
-    }
-    if (e.key === '/' && !isEditorOpen() && document.activeElement?.tagName !== 'INPUT') {
-      e.preventDefault();
-      $('#search').focus();
     }
   });
 

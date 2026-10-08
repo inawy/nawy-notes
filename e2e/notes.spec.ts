@@ -315,3 +315,32 @@ test.describe('سطح المكتب: السحب بالفأرة لإعادة ال�
     expect(await titles()).toEqual(after);
   });
 });
+
+test.describe('سطح المكتب: اختصارات لوحة المفاتيح', () => {
+  test.use({ viewport: { width: 1280, height: 800 }, isMobile: false, hasTouch: false });
+
+  test('c ملاحظة جديدة، Ctrl+Enter يحفظ ويغلق، / للبحث، ? للمساعدة', async ({ page }) => {
+    await open(page);
+    await page.keyboard.press('c');
+    await expect(page.locator('#eTitle')).toBeVisible();
+    await page.fill('#eTitle', 'من الكيبورد');
+    await page.keyboard.press('Control+Enter');
+    await expect(page.locator('#editor')).toBeHidden();
+    await expect(page.locator('.note-card', { hasText: 'من الكيبورد' })).toBeVisible();
+
+    await page.keyboard.press('/');
+    await expect(page.locator('#search')).toBeFocused();
+    await page.keyboard.type('c'); // أثناء الكتابة لا يفتح محرراً جديداً
+    await expect(page.locator('#editor')).toBeHidden();
+    await page.keyboard.press('Escape');
+    await page.locator('#search').blur();
+
+    await page.keyboard.press('Shift+Slash');
+    await expect(page.locator('#shortcutsHelp')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#shortcutsHelp')).toHaveCount(0);
+
+    await page.keyboard.press('3');
+    await expect(page.locator('#vhTitle')).toHaveText('المهملات');
+  });
+});

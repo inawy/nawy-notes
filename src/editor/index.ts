@@ -88,7 +88,7 @@ export async function closeEditor(): Promise<void> {
 
 export function applyColor(n: Note) {
   $('#editorCard').className =
-    `modal-enter relative flex h-full w-full flex-col overflow-hidden border border-black/5 shadow-2xl dark:border-white/10 ${st.drawingId ? 'sm:h-[92dvh]' : 'sm:h-auto'} sm:max-h-[92dvh] sm:max-w-xl sm:rounded-2xl nc-${n.color}`;
+    `modal-enter relative flex h-full w-full flex-col overflow-hidden border border-black/5 shadow-2xl dark:border-white/10 ${st.drawingId ? 'sm:h-[92dvh]' : 'sm:h-auto'} sm:max-h-[92dvh] sm:max-w-xl sm:rounded-2xl lg:max-w-3xl ${st.drawingId ? '' : 'lg:min-h-[26rem]'} nc-${n.color}`;
 }
 
 export function renderAll() {
