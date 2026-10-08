@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import type { Plugin } from 'vite';
+import { createHash } from 'node:crypto';
 import brand from './brand.json';
 
 /** يستبدل {{brand.x}} في index.html وملفات CSS بقيم brand.json: مصدر واحد للألوان. */
@@ -22,12 +23,49 @@ function brandTokens(): Plugin {
   };
 }
 
+/**
+ * سياسة أمان المحتوى كوسم meta (GitHub Pages لا يتيح ترويسات). تُحسب بصمات السكربتات المضمّنة عند البناء
+ * فلا تنكسر عند تعديلها، ولا تُطبَّق في التطوير (HMR يحقن سكربتات مضمّنة).
+ * style-src يسمح بـ unsafe-inline لأن الواجهة تستخدم style="" ؛ السكربتات هي الخطر الحقيقي وهي مقيّدة.
+ */
+function cspMeta(): Plugin {
+  return {
+    name: 'nawy-csp',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html) {
+        const hashes = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(
+          (m) => `'sha256-${createHash('sha256').update(m[1]).digest('base64')}'`,
+        );
+        const csp = [
+          "default-src 'self'",
+          `script-src 'self' ${hashes.join(' ')}`,
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob:",
+          "media-src 'self' blob: data:",
+          "connect-src 'self' data: blob:",
+          "font-src 'self' data:",
+          "manifest-src 'self'",
+          "worker-src 'self'",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+        ].join('; ');
+        const tag = `<meta http-equiv="Content-Security-Policy" content="${csp}" />`;
+        return html.replace(/(<meta charset="[^"]*"\s*\/?>)/i, `$1\n    ${tag}`);
+      },
+    },
+  };
+}
+
 // base './' => يعمل على GitHub Pages (مسار مشروع فرعي) وعلى نطاق مخصص مثل nawy.app بدون تغيير.
 export default defineConfig({
   base: './',
   plugins: [
     brandTokens(),
     tailwindcss(),
+    cspMeta(),
     VitePWA({
       registerType: 'prompt',
       includeAssets: [

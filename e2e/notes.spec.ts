@@ -426,3 +426,53 @@ test('تعديل من تبويب آخر لا يُطمس: يُحفظ كنسخة �
   await expect(page.locator('#grid')).toContainText('نص من التبويب الآخر');
   await expect(page.locator('#grid')).toContainText('تعديل التبويب الأول');
 });
+
+test('سياسة أمان المحتوى مفعّلة ولا تُسجَّل مخالفات في الاستخدام العادي', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { __csp: string[] }).__csp = [];
+    document.addEventListener('securitypolicyviolation', (e) =>
+      (window as unknown as { __csp: string[] }).__csp.push(`${e.violatedDirective} ${e.blockedURI}`),
+    );
+  });
+  await open(page);
+  await expect(page.locator('meta[http-equiv="Content-Security-Policy"]')).toHaveCount(1);
+  await newNote(page, 'list');
+  await page.fill('#eTitle', 'قائمة');
+  await expect(page.locator('#eSaved')).toContainText('محفوظة');
+  await page.click('#eDone');
+  await page.locator('.note-card').first().click();
+  await page.keyboard.press('Escape');
+  // حقن سكربت مضمّن لا يجب أن يُنفَّذ
+  const ran = await page.evaluate(() => {
+    const s = document.createElement('script');
+    s.textContent = 'window.__injected = 1';
+    document.body.appendChild(s);
+    return (window as unknown as { __injected?: number }).__injected === 1;
+  });
+  expect(ran).toBe(false);
+  const v = await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp);
+  expect(v.filter((x) => !x.startsWith('script-src-elem'))).toEqual([]);
+});
+
+test('بلا إنترنت: الإنشاء والحفظ يعملان (محلي أولاً)', async ({ page, context }) => {
+  await open(page);
+  await context.setOffline(true);
+  await newNote(page, 'text');
+  await page.fill('#eTitle', 'بدون شبكة');
+  await page.fill('#eText', 'يعمل');
+  await expect(page.locator('#eSaved')).toContainText('محفوظة');
+  await page.click('#eDone');
+  await expect(page.locator('.note-card')).toContainText('بدون شبكة');
+  await context.setOffline(false);
+});
+
+test('إغلاق المحرر فوراً بعد الكتابة لا يُضيّع النص', async ({ page }) => {
+  await open(page);
+  await newNote(page, 'text');
+  await page.fill('#eTitle', 'سريعة');
+  await page.fill('#eText', 'كتبت وأغلقت فوراً');
+  await page.click('#eDone'); // قبل انتهاء مهلة الحفظ المؤجَّل
+  await page.reload();
+  await page.waitForSelector('#fab');
+  await expect(page.locator('.note-card')).toContainText('سريعة');
+});
