@@ -395,3 +395,34 @@ test('تعذّر فتح قاعدة البيانات يعرض شاشة استرد
   await page.keyboard.press('Escape');
   await expect(page.locator('#dbRecovery')).toHaveCount(0);
 });
+
+test('تعديل من تبويب آخر لا يُطمس: يُحفظ كنسخة جديدة', async ({ page, context }) => {
+  await open(page);
+  await newNote(page, 'text');
+  await page.fill('#eTitle', 'أصلية');
+  await page.fill('#eText', 'نص أول');
+  await expect(page.locator('#eSaved')).toContainText('محفوظة');
+  await page.click('#eDone');
+
+  await page.locator('.note-card').first().click();
+  await page.click('#rEdit');
+  await page.waitForSelector('#eText');
+
+  const other = await context.newPage();
+  await open(other);
+  await other.locator('.note-card').first().click();
+  await other.click('#rEdit');
+  await other.fill('#eText', 'نص من التبويب الآخر');
+  await expect(other.locator('#eSaved')).toContainText('محفوظة');
+  await other.click('#eDone');
+
+  await page.fill('#eText', 'تعديل التبويب الأول');
+  await expect(page.locator('#toast')).toContainText('نافذة أخرى');
+  await page.click('#eDone');
+
+  await page.reload();
+  await page.waitForSelector('#fab');
+  await expect(page.locator('.note-card')).toHaveCount(2);
+  await expect(page.locator('#grid')).toContainText('نص من التبويب الآخر');
+  await expect(page.locator('#grid')).toContainText('تعديل التبويب الأول');
+});

@@ -25,6 +25,7 @@ export async function flushEditor(): Promise<void> {
 /** isNew: ملاحظة جديدة لم تُحفظ بعد — تُهمَل إن بقيت فارغة. */
 export function openEditor(note: Note, isNew: boolean, initial?: InitialAction): void {
   st.current = structuredClone(note);
+  st.baseUpdatedAt = note.updatedAt;
   st.dirty = isNew;
   st.closing = false;
   st.pop = null;

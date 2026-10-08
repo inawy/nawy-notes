@@ -75,6 +75,27 @@ export async function saveNote(n: Note): Promise<void> {
   await db.notes.put(structuredClone(n)); // structuredClone يحافظ على Blob
 }
 
+/**
+ * حفظ آمن بين التبويبات: إن تغيّرت الملاحظة في المخزن بعد أن فتحها المحرر (updatedAt أحدث من `base`)
+ * فلا نطمس تعديل التبويب الآخر؛ تُحفظ تعديلاتنا كنسخة جديدة بمعرّف جديد (يتغيّر `n.id`).
+ */
+export async function saveNoteGuarded(n: Note, base: number): Promise<{ conflict: boolean }> {
+  return db.transaction('rw', db.notes, async () => {
+    const cur = await db.notes.get(n.id);
+    const conflict = !!cur && cur.updatedAt > base;
+    if (conflict) {
+      n.id = uid();
+      n.title = `${n.title} (نسخة متعارضة)`.trim();
+      n.status = 'active';
+      n.trashedAt = null;
+      n.deletedAt = undefined;
+    }
+    n.updatedAt = Date.now();
+    await db.notes.put(structuredClone(n));
+    return { conflict };
+  });
+}
+
 export async function setStatus(id: string, status: NoteStatus): Promise<void> {
   await db.notes.update(id, {
     status,

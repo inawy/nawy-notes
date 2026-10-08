@@ -1,7 +1,7 @@
 import type { Note } from '../types';
 import type { DrawingBoard } from '../lib/draw';
 import type { VoiceRecorder } from '../lib/media';
-import { saveNote } from '../db';
+import { saveNoteGuarded } from '../db';
 import { debounce } from '../lib/util';
 import { icon } from '../lib/icons';
 import { toast } from '../lib/toast';
@@ -15,6 +15,8 @@ export type InitialAction = 'draw' | 'audio' | 'image';
 export const st = {
   current: null as Note | null,
   dirty: false,
+  /** آخر updatedAt عرفناه للملاحظة في المخزن (لكشف تعديل تبويب آخر). */
+  baseUpdatedAt: 0,
   closing: false,
   /** النافذة المنبثقة المفتوحة في الشريط السفلي. */
   pop: null as 'add' | 'color' | null,
@@ -84,12 +86,15 @@ let retryTimer: ReturnType<typeof setTimeout> | undefined;
 export async function persist(): Promise<boolean> {
   const n = st.current;
   if (!n) return true;
+  const oldId = n.id;
   try {
-    await saveNote(n);
+    const { conflict } = await saveNoteGuarded(n, st.baseUpdatedAt);
+    st.baseUpdatedAt = n.updatedAt;
     st.dirty = false;
     failStreak = 0;
     clearTimeout(retryTimer);
-    clearDraft(n.id);
+    clearDraft(oldId);
+    if (conflict) toast('عُدّلت هذه الملاحظة في نافذة أخرى — حُفظت تعديلاتك كنسخة جديدة دون فقدان شيء', undefined);
     return true;
   } catch (err) {
     st.dirty = true;
