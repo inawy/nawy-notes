@@ -344,3 +344,54 @@ test.describe('سطح المكتب: اختصارات لوحة المفاتيح',
     await expect(page.locator('#vhTitle')).toHaveText('المهملات');
   });
 });
+
+test('مسودة غير محفوظة تُعرض للاستعادة بعد إغلاق مفاجئ', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() =>
+    localStorage.setItem(
+      'nawy-note:draft',
+      JSON.stringify({ id: 'draft-1', type: 'text', title: 'مسودة', body: 'نص لم يُحفظ', items: [], savedAt: Date.now() }),
+    ),
+  );
+  await page.reload();
+  await page.waitForSelector('#fab');
+  await page.click('#toast button');
+  await expect(page.locator('#eText')).toHaveValue('نص لم يُحفظ');
+  await expect(page.locator('#eTitle')).toHaveValue('مسودة');
+});
+
+test('فشل الحفظ (امتلاء التخزين) لا يضيّع النص ويُعاد تلقائياً', async ({ page }) => {
+  await open(page);
+  await newNote(page, 'text');
+  await page.evaluate(() => {
+    const w = window as unknown as { __fail: boolean };
+    w.__fail = true;
+    const orig = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function (...a: Parameters<typeof orig>) {
+      if (w.__fail) throw new DOMException('quota', 'QuotaExceededError');
+      return orig.apply(this, a);
+    };
+  });
+  await page.fill('#eText', 'نص مهم جداً');
+  await expect(page.locator('#eSaved')).toContainText('تعذّر الحفظ');
+  expect(await page.evaluate(() => localStorage.getItem('nawy-note:draft'))).toContain('نص مهم جداً');
+
+  await page.evaluate(() => ((window as unknown as { __fail: boolean }).__fail = false));
+  await expect(page.locator('#eSaved')).toContainText('محفوظة', { timeout: 15000 });
+  expect(await page.evaluate(() => localStorage.getItem('nawy-note:draft'))).toBeNull();
+  await page.click('#eDone');
+  await expect(page.locator('.note-card')).toContainText('نص مهم جداً');
+});
+
+test('تعذّر فتح قاعدة البيانات يعرض شاشة استرداد بلا حذف بيانات', async ({ page }) => {
+  await page.addInitScript(() => {
+    indexedDB.open = () => {
+      throw new DOMException('denied', 'SecurityError');
+    };
+  });
+  await page.goto('./');
+  await expect(page.locator('#dbRecovery')).toBeVisible();
+  await expect(page.locator('#dbRecovery')).toContainText('بياناتك لم تُحذف');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#dbRecovery')).toHaveCount(0);
+});

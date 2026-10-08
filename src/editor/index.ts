@@ -1,8 +1,9 @@
 import { type Note } from '../types';
-import { deleteForever, isEmptyNote, saveNote } from '../db';
+import { deleteForever, isEmptyNote } from '../db';
 import { $ } from '../lib/util';
 import { html } from '../lib/html';
-import { hooks, st, notifySaved, releaseUrls, save, touch, type InitialAction } from './session';
+import { clearDraft } from '../lib/draft';
+import { hooks, st, notifySaved, persist, releaseUrls, save, touch, type InitialAction } from './session';
 import { popHist, pushHist, trackViewport } from './viewport';
 import { renderList, renderText } from './text';
 import { addImage, renderMedia, startRecording, stopRecording } from './media';
@@ -17,8 +18,7 @@ export function isEditorOpen(): boolean {
 export async function flushEditor(): Promise<void> {
   save.cancel();
   if (st.current && st.dirty && !isEmptyNote(st.current)) {
-    st.dirty = false;
-    await saveNote(st.current);
+    await persist();
   }
 }
 
@@ -61,19 +61,27 @@ export async function closeEditor(): Promise<void> {
   st.closing = true;
   if (st.recorder) await stopRecording(true); // لا نُضيّع تسجيلاً جارياً
   save.cancel();
+  n.attachments = n.attachments.filter((a) => a.kind !== 'draw' || (a.drawing?.strokes.length ?? 0) > 0);
+
+  const empty = isEmptyNote(n);
+  const wasDirty = st.dirty;
+  if (!empty && st.dirty && !(await persist())) {
+    // فشل الحفظ: يبقى المحرر مفتوحاً بكل محتواه ولا نخسر شيئاً
+    st.closing = false;
+    return;
+  }
   st.board?.destroy();
   st.board = null;
   st.drawingId = null;
   clearInterval(st.timerId);
   releaseUrls();
-  n.attachments = n.attachments.filter((a) => a.kind !== 'draw' || (a.drawing?.strokes.length ?? 0) > 0);
   st.current = null;
 
-  if (isEmptyNote(n)) {
+  if (empty) {
     await deleteForever(n.id); // لا يوجد شيء يُحفظ
+    clearDraft(n.id);
     notifySaved(n.id, false);
-  } else if (st.dirty) {
-    await saveNote(n);
+  } else if (wasDirty) {
     notifySaved(n.id, true);
   }
   st.dirty = false;

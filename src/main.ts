@@ -25,6 +25,7 @@ import { mountDrawer } from './features/drawer';
 import { handleLaunchIntent } from './features/launch';
 import { mountPwa } from './features/pwa';
 import { mountTabSwipe } from './features/tab-swipe';
+import { recoverDraft, showDbRecovery } from './features/recovery';
 import { mountShortcuts } from './features/shortcuts';
 import { mountTheme, syncTheme } from './features/theme';
 import { preventNativeMenu } from './lib/app-feel';
@@ -514,7 +515,12 @@ function guardFirstRender() {
 
 // ---------- البدء ----------
 db.on('blocked', () => reportError('هناك نافذة أخرى من التطبيق مفتوحة بنسخة قديمة. أغلقها ثم حدّث هذه الصفحة.'));
-db.open().catch((err) => reportError(dbMessage(err)));
+db.open()
+  .then(() => void recoverDraft())
+  .catch((err) => {
+    reportError(dbMessage(err));
+    void showDbRecovery(err);
+  });
 setOnSaved((id, expectPresent) => void afterSave(id, expectPresent));
 loadPrefs();
 mountChrome();
