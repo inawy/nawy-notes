@@ -472,6 +472,7 @@ test('إغلاق المحرر فوراً بعد الكتابة لا يُضيّع
   await page.fill('#eTitle', 'سريعة');
   await page.fill('#eText', 'كتبت وأغلقت فوراً');
   await page.click('#eDone'); // قبل انتهاء مهلة الحفظ المؤجَّل
+  await expect(page.locator('#editor')).toBeHidden(); // يُخفى بعد اكتمال الحفظ
   await page.reload();
   await page.waitForSelector('#fab');
   await expect(page.locator('.note-card')).toContainText('سريعة');
