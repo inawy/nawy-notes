@@ -155,6 +155,7 @@ const card = (n: Note): string => {
 };
 
 function render(notes: Note[]) {
+  const t0 = performance.now();
   urls.forEach((u) => URL.revokeObjectURL(u));
   urls = [];
   cache = new Map(notes.map((n) => [n.id, n]));
@@ -184,6 +185,7 @@ function render(notes: Note[]) {
     } else t.removeAttribute('aria-current');
   });
   mountSortables();
+  performance.measure('nawy:render', { start: t0, detail: { n: notes.length } });
   if (enterPending) {
     enterPending = false;
     window.scrollTo(0, 0); // العرض الجديد يبدأ من أعلاه بدل قفزة في موضع التمرير
@@ -273,7 +275,12 @@ function subscribe() {
   const q = query;
   const sm = sortMode;
   const sd = sortDir;
-  sub = liveQuery(() => listNotes(v, q, sm, sd)).subscribe({
+  sub = liveQuery(async () => {
+    const t0 = performance.now();
+    const r = await listNotes(v, q, sm, sd);
+    performance.measure('nawy:query', { start: t0 });
+    return r;
+  }).subscribe({
     next: (notes) => {
       firstRender = true;
       try {
