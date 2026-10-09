@@ -186,7 +186,10 @@ export async function reorderNotes(ids: string[]): Promise<void> {
       if (n) found.push(n);
     }
     const slots = found.map(orderKey).sort((a, b) => a - b);
-    for (let i = 0; i < found.length; i++) await db.notes.update(found[i].id, { order: slots[i] });
+    for (const [i, f] of found.entries()) {
+      const order = slots[i];
+      if (order !== undefined) await db.notes.update(f.id, { order });
+    }
   });
 }
 

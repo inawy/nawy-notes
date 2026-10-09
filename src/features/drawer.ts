@@ -78,8 +78,10 @@ export function mountDrawer(opts: { onOpen?: () => void } = {}): void {
   root.addEventListener(
     'touchstart',
     (e) => {
-      sx = e.touches[0].clientX;
-      sy = e.touches[0].clientY;
+      const t = e.touches[0];
+      if (!t) return;
+      sx = t.clientX;
+      sy = t.clientY;
     },
     { passive: true },
   );
@@ -87,8 +89,10 @@ export function mountDrawer(opts: { onOpen?: () => void } = {}): void {
     'touchend',
     (e) => {
       if (mq.matches) return;
-      const dx = e.changedTouches[0].clientX - sx;
-      const dy = e.changedTouches[0].clientY - sy;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      const dx = t.clientX - sx;
+      const dy = t.clientY - sy;
       const towardEdge = getComputedStyle(document.documentElement).direction === 'rtl' ? dx : -dx;
       if (towardEdge > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) setSheet(false);
     },

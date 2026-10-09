@@ -28,6 +28,7 @@ export function swipeDismiss(el: HTMLElement, onDismiss: () => void, scroller?: 
         return;
       }
       const t = e.touches[0];
+      if (!t) return;
       sx = t.clientX;
       sy = t.clientY;
       st = Date.now();
@@ -43,6 +44,7 @@ export function swipeDismiss(el: HTMLElement, onDismiss: () => void, scroller?: 
     (e) => {
       if (axis === 'none') return;
       const t = e.touches[0];
+      if (!t) return;
       dx = t.clientX - sx;
       dy = t.clientY - sy;
       if (axis === null) {

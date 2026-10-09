@@ -6,10 +6,11 @@ export const PEN_SIZES = [5, 9, 16] as const;
 
 function outlineToPath(points: number[][]): string {
   if (points.length < 2) return '';
-  let d = `M ${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)} Q`;
+  const [fx = 0, fy = 0] = points[0] ?? [];
+  let d = `M ${fx.toFixed(1)} ${fy.toFixed(1)} Q`;
   for (let i = 0; i < points.length; i++) {
-    const [x0, y0] = points[i];
-    const [x1, y1] = points[(i + 1) % points.length];
+    const [x0 = 0, y0 = 0] = points[i] ?? [];
+    const [x1 = 0, y1 = 0] = points[(i + 1) % points.length] ?? [];
     d += ` ${x0.toFixed(1)} ${y0.toFixed(1)} ${((x0 + x1) / 2).toFixed(1)} ${((y0 + y1) / 2).toFixed(1)}`;
   }
   return d + ' Z';
@@ -138,8 +139,9 @@ export class DrawingBoard {
   private up = (e: PointerEvent) => {
     if (this.canvas.hasPointerCapture(e.pointerId)) this.canvas.releasePointerCapture(e.pointerId);
     if (this.cur) {
-      if (this.cur.points.length === 1) {
-        const [x, y, p] = this.cur.points[0];
+      const only = this.cur.points[0];
+      if (this.cur.points.length === 1 && only) {
+        const [x, y, p] = only;
         this.cur.points.push([x + 0.01, y, p]); // نقطة واحدة = دائرة صغيرة
       }
       this.pushUndo();

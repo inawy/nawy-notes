@@ -25,6 +25,7 @@ export function trapFocus(root: HTMLElement, opts: { onEscape?: () => void; init
     }
     const first = list[0];
     const last = list[list.length - 1];
+    if (!first || !last) return;
     const active = document.activeElement;
     if (!root.contains(active)) {
       e.preventDefault();

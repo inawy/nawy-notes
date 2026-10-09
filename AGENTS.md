@@ -70,6 +70,9 @@ e2e/                  Playwright على النسخة المبنية بـ Indexed
 **الاعتماديات**
 14. لا تضف اعتمادية جديدة بلا سبب مكتوب في `docs/decisions.md`. الحجم والبساطة أولاً.
 
+**الشيفرة**
+15. حدود الطبقات (`types ← data/pwa ← lib ← views`، `db ← editor/reader ← features ← main`) يفرضها ESLint؛ لا تستورد من طبقة أعلى. و`noUncheckedIndexedAccess` مفعّل: تحقّق من `arr[i]` قبل الاستخدام.
+
 ## سير العمل
 1. اقرأ الملفات المعنية قبل التعديل؛ غيّر أقل ما يلزم؛ لا إعادة كتابة شاملة.
 2. شغّل `npm test && npm run lint && npm run build` محلياً إن أمكن.

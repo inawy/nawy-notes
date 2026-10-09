@@ -28,9 +28,9 @@ function render(v: Part): string {
  * القوائم تُدمج، و`false/null/undefined` تصبح فارغة (مناسب لـ `cond && html`…``).
  */
 export function html(strings: TemplateStringsArray, ...values: Part[]): SafeHtml {
-  let out = strings[0];
+  let out = strings[0] ?? '';
   values.forEach((v, i) => {
-    out += render(v) + strings[i + 1];
+    out += render(v) + (strings[i + 1] ?? '');
   });
   return new SafeHtml(out);
 }

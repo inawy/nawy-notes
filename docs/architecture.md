@@ -23,6 +23,12 @@ main.ts render(notes) → cardHTML(note, ctx) → innerHTML للشبكة
 - **`features/`**: كل ميزة مستقلة تُركَّب بـ `mountX()`؛ حذف ملف ميزة لا يكسر غيرها.
 - **`lib/`**: أدوات بلا حالة تطبيق (`html`, `icons`, `util`, `toast`, `swipe-dismiss`, `focus-trap`, `draw`, `media`, `permission`).
 
+### حدود الطبقات (يفرضها ESLint)
+```
+types ← data, pwa ← lib ← views        db ← editor, reader ← features ← main
+```
+الأدنى لا يستورد من الأعلى (`no-restricted-imports` في `eslint.config.js`). `lib/prefs.ts` يحوي منطق التفضيلات النقي (`parsePrefs`). حالة العرض ما زالت متغيرات داخل `main.ts` (استخراجها كاملة مؤجَّل لأنه يمسّ كل الدوال).
+
 ## نموذج الملاحظة (`types.ts`)
 `id (UUID)`, `type: text|list`, `title`, `body`, `items[]`, `attachments[]` (صورة/صوت/رسم؛ Blob مخزّن مباشرة)، `color`, `order?`, `pinned`, `status: active|archived|trashed|deleted`, `createdAt`, `updatedAt`, `trashedAt`, `deletedAt?`.
 - المعرّفات UUID و`updatedAt` و`deleted` (شاهد) = جاهزة لمزامنة مستقبلية بلا كسر.

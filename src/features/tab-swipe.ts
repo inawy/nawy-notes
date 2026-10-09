@@ -14,9 +14,11 @@ export function mountTabSwipe<V extends string>(opts: {
   main.addEventListener(
     'touchstart',
     (e) => {
-      tracking = e.touches.length === 1 && !opts.blocked() && !document.querySelector('.drag-chosen');
-      sx = e.touches[0].clientX;
-      sy = e.touches[0].clientY;
+      const t = e.touches[0];
+      tracking = !!t && e.touches.length === 1 && !opts.blocked() && !document.querySelector('.drag-chosen');
+      if (!t) return;
+      sx = t.clientX;
+      sy = t.clientY;
       st = Date.now();
     },
     { passive: true },
@@ -27,12 +29,14 @@ export function mountTabSwipe<V extends string>(opts: {
       if (!tracking) return;
       tracking = false;
       const t = e.changedTouches[0];
+      if (!t) return;
       const dx = t.clientX - sx,
         dy = t.clientY - sy;
       if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.2 || Date.now() - st > 600) return;
       if (document.querySelector('.drag-chosen')) return;
       const i = opts.order.indexOf(opts.current()) + (dx > 0 ? 1 : -1);
-      if (i >= 0 && i < opts.order.length) opts.go(opts.order[i]);
+      const next = opts.order[i];
+      if (next !== undefined) opts.go(next);
     },
     { passive: true },
   );

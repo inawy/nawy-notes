@@ -29,6 +29,7 @@ import { recoverDraft, showDbRecovery } from './features/recovery';
 import { mountShortcuts } from './features/shortcuts';
 import { mountTheme, syncTheme } from './features/theme';
 import { preventNativeMenu } from './lib/app-feel';
+import { parsePrefs, serializePrefs } from './lib/prefs';
 import { closeReader, isReaderOpen, openReader } from './reader';
 
 let view: View = 'notes';
@@ -66,18 +67,15 @@ const PREFS_KEY = 'nawy-note:prefs'; // بادئة: الموقع يشاركه م
 
 function loadPrefs() {
   try {
-    const p = JSON.parse(localStorage.getItem(PREFS_KEY) ?? '{}') as Record<string, unknown>;
-    if (p.sort === 'manual' || p.sort === 'created' || p.sort === 'updated') sortMode = p.sort;
-    if (p.dir === 'asc' || p.dir === 'desc') sortDir = p.dir;
-    if (p.layout === 'grid' || p.layout === 'list') layout = p.layout;
+    ({ sort: sortMode, dir: sortDir, layout } = parsePrefs(localStorage.getItem(PREFS_KEY)));
   } catch {
-    /* التخزين محجوب أو تالف: نستخدم الافتراضي */
+    /* التخزين محجوب: نستخدم الافتراضي */
   }
 }
 
 function savePrefs() {
   try {
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ sort: sortMode, dir: sortDir, layout }));
+    localStorage.setItem(PREFS_KEY, serializePrefs({ sort: sortMode, dir: sortDir, layout }));
   } catch {
     /* تجاهل */
   }

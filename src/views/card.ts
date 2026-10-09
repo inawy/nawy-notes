@@ -29,6 +29,8 @@ function card(n: Note, ctx: CardContext): SafeHtml {
   const { trash, layout, blobUrl } = ctx;
   const imgs = n.attachments.filter((a) => a.kind === 'image' && a.blob);
   const draws = n.attachments.filter((a) => a.kind === 'draw' && a.drawing?.strokes.length);
+  const img0 = imgs[0]?.blob;
+  const draw0 = draws[0]?.drawing;
   const audios = n.attachments.filter((a) => a.kind === 'audio' && a.blob);
   const base = `note-card nc-${n.color} cursor-pointer overflow-hidden rounded-[18px] border border-black/[0.07] dark:border-white/10`;
   const tab = trash ? '' : raw('tabindex="0"');
@@ -44,11 +46,11 @@ function card(n: Note, ctx: CardContext): SafeHtml {
   if (layout === 'list') {
     let thumb: SafeHtml = raw(icon(n.type === 'list' ? 'list' : 'notes', 'w-6 h-6'));
     let fallback = summaryOf(n);
-    if (imgs.length) {
-      thumb = html`<img src="${blobUrl(imgs[0].blob!)}" alt="" loading="lazy" class="h-full w-full object-cover" />`;
+    if (img0) {
+      thumb = html`<img src="${blobUrl(img0)}" alt="" loading="lazy" class="h-full w-full object-cover" />`;
       fallback ||= 'صورة';
-    } else if (draws.length) {
-      thumb = html`<div class="h-full w-full p-1 text-slate-800 [&>svg]:h-full [&>svg]:w-full dark:text-slate-100">${raw(drawingPreviewSvg(draws[0].drawing!))}</div>`;
+    } else if (draw0) {
+      thumb = html`<div class="h-full w-full p-1 text-slate-800 [&>svg]:h-full [&>svg]:w-full dark:text-slate-100">${raw(drawingPreviewSvg(draw0))}</div>`;
       fallback ||= 'رسم';
     } else if (audios.length) {
       thumb = raw(icon('mic', 'w-6 h-6'));
@@ -80,9 +82,9 @@ function card(n: Note, ctx: CardContext): SafeHtml {
   let inner: SafeHtml;
   if (cover) {
     const layer =
-      cover === 'img'
-        ? html`<img src="${blobUrl(imgs[0].blob!)}" alt="${n.title || 'صورة'}" loading="lazy" class="absolute inset-0 h-full w-full object-cover" />`
-        : html`<div class="absolute inset-0 flex items-center justify-center p-3 pb-10 text-slate-800 dark:text-slate-100 [&>svg]:max-h-full [&>svg]:w-full">${raw(drawingPreviewSvg(draws[0].drawing!))}</div>`;
+      cover === 'img' && img0
+        ? html`<img src="${blobUrl(img0)}" alt="${n.title || 'صورة'}" loading="lazy" class="absolute inset-0 h-full w-full object-cover" />`
+        : html`<div class="absolute inset-0 flex items-center justify-center p-3 pb-10 text-slate-800 dark:text-slate-100 [&>svg]:max-h-full [&>svg]:w-full">${draw0 ? raw(drawingPreviewSvg(draw0)) : ''}</div>`;
     const dark = cover === 'img';
     const cap = n.title || (cover === 'draw' ? 'رسم' : '');
     inner = html`${layer}${

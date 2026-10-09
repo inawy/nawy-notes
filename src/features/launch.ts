@@ -10,7 +10,7 @@ export function handleLaunchIntent(): void {
   history.replaceState(null, '', location.pathname + location.hash); // لا يتكرر عند التحديث
   if (shared.length) {
     const note = newNote('text');
-    note.title = shared.length > 1 ? shared[0] : '';
+    note.title = shared.length > 1 ? (shared[0] ?? '') : '';
     note.body = shared.slice(shared.length > 1 ? 1 : 0).join('\n');
     openEditor(note, true);
   } else if (kind === 'text' || kind === 'list') openEditor(newNote(kind), true);

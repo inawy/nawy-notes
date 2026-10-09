@@ -19,6 +19,7 @@ export interface Box {
 export function pickTarget(boxes: Box[], x: number, y: number, shrink = 0.1): number {
   for (let i = 0; i < boxes.length; i++) {
     const b = boxes[i];
+    if (!b) continue;
     const mx = (b.right - b.left) * shrink;
     const my = (b.bottom - b.top) * shrink;
     if (x >= b.left + mx && x <= b.right - mx && y >= b.top + my && y <= b.bottom - my) return i;
@@ -197,8 +198,8 @@ export function makeReorderable(container: HTMLElement, opts: ReorderOptions): (
     }));
     const i = pickTarget(boxes, drag.x, drag.y);
     if (i < 0) return;
-    const target = drag.layout[i].el;
-    if (target === drag.el) return;
+    const target = drag.layout[i]?.el;
+    if (!target || target === drag.el) return;
     const order = items();
     const to = order.indexOf(target);
     const from = order.indexOf(drag.el);
