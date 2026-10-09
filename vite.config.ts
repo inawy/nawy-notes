@@ -17,7 +17,7 @@ function brandTokens(): Plugin {
     enforce: 'pre',
     transformIndexHtml: { order: 'pre', handler: fill },
     transform(code, id) {
-      return id.split('?')[0].endsWith('.css') ? fill(code) : null;
+      return (id.split('?')[0] ?? '').endsWith('.css') ? fill(code) : null;
     },
   };
 }
@@ -37,7 +37,7 @@ function cspMeta(): Plugin {
         // WebCrypto عام في Node ≥ 20: لا حاجة لـ @types/node
         const sha = async (text: string) =>
           btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)))));
-        const bodies = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+        const bodies = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1] ?? '');
         const hashes = await Promise.all(bodies.map(async (b) => `'sha256-${await sha(b)}'`));
         const csp = [
           "default-src 'self'",
