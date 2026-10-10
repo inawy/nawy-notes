@@ -52,7 +52,16 @@ test(`أداء: ${N} ملاحظة — أول رسم والبحث`, async ({ page
   await page.reload();
   await page.waitForSelector('.note-card');
   const first = Date.now() - t0;
-  await expect(page.locator('.note-card')).toHaveCount(N, { timeout: 30_000 });
+  // التحميل تدريجي: نمرّر للأسفل حتى تظهر كل البطاقات
+  await expect
+    .poll(
+      async () => {
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+        return page.locator('.note-card').count();
+      },
+      { timeout: 60_000, intervals: [100] },
+    )
+    .toBe(N);
   const all = Date.now() - t0;
 
   const marks = await page.evaluate(() =>
