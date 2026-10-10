@@ -41,6 +41,42 @@ let sub: Subscription | undefined;
 let cache = new Map<string, Note>();
 let firstRender = false;
 
+// ---------- تحميل تدريجي للبطاقات ----------
+// آلاف البطاقات دفعة واحدة تُبطئ تخطيط المتصفح (قيس: ~3.4ث لـ 5000 على CI) بينما كود الرسم ~150ms.
+// نعرض دفعة أولى ثم نضيف المزيد عند الاقتراب من نهاية القائمة. إعادة الرسم تحافظ على عدد ما ظهر فلا يقفز التمرير.
+const PAGE = 80;
+let shown = PAGE;
+let shownKey = '';
+let pendingOthers: Note[] = [];
+let moreObserver: IntersectionObserver | undefined;
+let moreSentinel: HTMLElement | undefined;
+/** هل في القائمة بطاقات لم تُعرض بعد؟ */
+const hasMoreCards = () => shown < pendingOthers.length;
+
+function loadMore() {
+  if (!hasMoreCards()) return;
+  const from = shown;
+  shown = Math.min(shown + PAGE * 2, pendingOthers.length);
+  $('#grid').insertAdjacentHTML('beforeend', pendingOthers.slice(from, shown).map(card).join(''));
+  watchMore();
+}
+
+/** يراقب عنصراً في نهاية القائمة؛ إعادة المراقبة بعد كل دفعة تُطلق فحصاً جديداً إن بقي ظاهراً. */
+function watchMore() {
+  if (!moreSentinel) {
+    moreSentinel = document.createElement('div');
+    moreSentinel.setAttribute('aria-hidden', 'true');
+    moreSentinel.style.height = '1px';
+    $('#grid').after(moreSentinel);
+    moreObserver = new IntersectionObserver((e) => e.some((x) => x.isIntersecting) && loadMore(), {
+      rootMargin: '1200px 0px',
+    });
+  }
+  moreObserver?.unobserve(moreSentinel);
+  if (hasMoreCards()) moreObserver?.observe(moreSentinel);
+}
+
+
 const VIEW_ICON = { notes: 'notes', archive: 'archive', trash: 'trash' } as const;
 const VIEW_LABEL: Record<View, string> = { notes: 'الملاحظات', archive: 'الأرشيف', trash: 'المهملات' };
 
@@ -155,6 +191,7 @@ const card = (n: Note): string => {
 };
 
 function render(notes: Note[]) {
+  const t0 = performance.now();
   urls.forEach((u) => URL.revokeObjectURL(u));
   urls = [];
   cache = new Map(notes.map((n) => [n.id, n]));
@@ -164,7 +201,13 @@ function render(notes: Note[]) {
   $('#pinnedSection').classList.toggle('hidden', !pinned.length);
   $('#pinnedGrid').innerHTML = pinned.map(card).join('');
   $('#othersTitle').classList.toggle('hidden', !(pinned.length && others.length));
-  $('#grid').innerHTML = others.map(card).join('');
+  const key = `${view}|${query}|${sortMode}|${sortDir}`;
+  if (key !== shownKey) shown = PAGE;
+  shownKey = key;
+  pendingOthers = others;
+  shown = Math.min(Math.max(shown, PAGE), others.length);
+  $('#grid').innerHTML = others.slice(0, shown).map(card).join('');
+  watchMore();
 
   const empty = !notes.length;
   const e = $('#empty');
@@ -184,6 +227,7 @@ function render(notes: Note[]) {
     } else t.removeAttribute('aria-current');
   });
   mountSortables();
+  performance.measure('nawy:render', { start: t0, detail: { n: notes.length } });
   if (enterPending) {
     enterPending = false;
     window.scrollTo(0, 0); // العرض الجديد يبدأ من أعلاه بدل قفزة في موضع التمرير
@@ -273,7 +317,12 @@ function subscribe() {
   const q = query;
   const sm = sortMode;
   const sd = sortDir;
-  sub = liveQuery(() => listNotes(v, q, sm, sd)).subscribe({
+  sub = liveQuery(async () => {
+    const t0 = performance.now();
+    const r = await listNotes(v, q, sm, sd);
+    performance.measure('nawy:query', { start: t0 });
+    return r;
+  }).subscribe({
     next: (notes) => {
       firstRender = true;
       try {
@@ -310,7 +359,7 @@ async function afterSave(id: string, expectPresent: boolean) {
       );
     }
     const visible = n && n.status === VIEW_STATUS[view] && !query;
-    if (visible && !document.querySelector(`.note-card[data-id="${id}"]`)) {
+    if (visible && !hasMoreCards() && !document.querySelector(`.note-card[data-id="${id}"]`)) {
       reportError(`حُفظت الملاحظة (الحالة: ${n.status}) لكنها لم تظهر في القائمة (العرض: ${view}).`);
     }
   } catch (err) {
