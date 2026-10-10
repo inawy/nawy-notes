@@ -310,6 +310,9 @@ html[data-layout='list'] .notes-grid {
     transform: none;
   }
 }
+#drawerRoot {
+  touch-action: pan-y; /* السحب الأفقي لنا (إغلاق القائمة) لا للمتصفح */
+}
 #drawerBackdrop {
   animation: fadeIn 0.2s ease;
 }
