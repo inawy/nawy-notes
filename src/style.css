@@ -220,6 +220,18 @@ html[data-layout='list'] .notes-grid {
 .note-card {
   overflow-wrap: anywhere;
 }
+/* قوائم كبيرة (آلاف الملاحظات): المتصفح يتخطى تخطيط/رسم البطاقات خارج الشاشة. تُفعَّل بالصنف big-list فقط
+   لأن content-visibility يقصّ ما يخرج عن حدود البطاقة (مثل حلقة التركيز) فنُدخلها للداخل. */
+.big-list > .note-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 150px;
+}
+html[data-layout='list'] .big-list > .note-card {
+  contain-intrinsic-size: auto 84px;
+}
+.big-list > .note-card:focus-visible {
+  outline-offset: -3px;
+}
 
 /* ألوان الملاحظات: متغيّر واحد لكل لون يتبدّل مع الوضع الداكن */
 :root {
