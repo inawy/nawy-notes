@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 /** اختبار أداء بـ 5000 ملاحظة. الميزانيات سخيّة (CI أبطأ من جهاز المستخدم) وتكشف الانحدار الكبير فقط. */
 const N = 5000;
-const BUDGET = { firstCards: Number(process.env.PERF_FIRST ?? 1), search: Number(process.env.PERF_SEARCH ?? 1) };
+const BUDGET = { firstCards: Number(process.env.PERF_FIRST ?? 2000), search: Number(process.env.PERF_SEARCH ?? 2500) };
 
 async function seed(page: Page) {
   await page.goto('./');
