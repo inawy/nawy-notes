@@ -477,3 +477,41 @@ test('إغلاق المحرر فوراً بعد الكتابة لا يُضيّع
   await page.waitForSelector('#fab');
   await expect(page.locator('.note-card')).toContainText('سريعة');
 });
+
+test('الرسم: مظلِّل ولون مخصص وتراجع/إعادة وتبقى الأدوات بعد إعادة التحميل', async ({ page }) => {
+  await open(page);
+  await page.click('#fab');
+  await page.click('#fabMenu [data-type="draw"]');
+  await page.waitForSelector('#dCanvas');
+  const box = (await page.locator('#dCanvas').boundingBox())!;
+  const stroke = async (y: number) => {
+    await page.mouse.move(box.x + 30, box.y + y);
+    await page.mouse.down();
+    for (let i = 1; i <= 8; i++) await page.mouse.move(box.x + 30 + i * 20, box.y + y + i * 3);
+    await page.mouse.up();
+  };
+  await stroke(60);
+  await page.click('[data-tool="highlighter"]');
+  await stroke(120);
+  await expect(page.locator('#dRedo')).toBeDisabled();
+  await page.click('#dUndo');
+  await expect(page.locator('#dRedo')).toBeEnabled();
+  await page.click('#dRedo');
+  await expect(page.locator('#dRedo')).toBeDisabled();
+  await page.locator('#dCustom').evaluate((el: HTMLInputElement) => {
+    el.value = '#10b981';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await stroke(180);
+  await page.click('[data-tool="eraser"]');
+  await expect(page.locator('#dSize')).toBeDisabled();
+  await page.click('#dDone');
+  await page.click('#eDone');
+  await expect(page.locator('.note-card svg path')).toHaveCount(3);
+  expect(await page.locator('.note-card svg path[fill-opacity]').count()).toBe(2);
+
+  await page.reload();
+  await page.waitForSelector('#fab');
+  await expect(page.locator('.note-card svg path')).toHaveCount(3);
+  expect(await page.evaluate(() => localStorage.getItem('nawy-note:pen'))).toContain('#10b981');
+});

@@ -1,8 +1,26 @@
 import { getStroke } from 'perfect-freehand';
 import type { Drawing, Pt, Stroke } from '../types';
 
-export const PEN_COLORS = ['ink', '#ef4444', '#2563eb', '#16a34a', '#f59e0b'] as const;
-export const PEN_SIZES = [5, 9, 16] as const;
+/** لوحة ألوان مضبوطة: 'ink' يتكيّف مع الوضع الداكن، والباقي ألوان ثابتة مقروءة على الفاتح والداكن. */
+export const PEN_COLORS = [
+  'ink',
+  '#ef4444',
+  '#f97316',
+  '#facc15',
+  '#22c55e',
+  '#14b8a6',
+  '#3b82f6',
+  '#6366f1',
+  '#a855f7',
+  '#ec4899',
+  '#92400e',
+] as const;
+export const SIZE_MIN = 2;
+export const SIZE_MAX = 36;
+export const DEFAULT_PEN_SIZE = 5;
+/** المظلِّل أعرض من القلم بهذا المعامل وشبه شفاف. */
+export const HIGHLIGHTER_SCALE = 2.6;
+export const HIGHLIGHTER_ALPHA = 0.38;
 
 function outlineToPath(points: number[][]): string {
   if (points.length < 2) return '';
@@ -20,10 +38,10 @@ function outlineToPath(points: number[][]): string {
 export function strokePath(s: Stroke): string {
   const outline = getStroke(s.points, {
     size: s.size,
-    thinning: 0.5,
+    thinning: s.hl ? 0 : 0.5, // المظلِّل بعرض ثابت
     smoothing: 0.5,
     streamline: 0.5,
-    simulatePressure: !s.pen,
+    simulatePressure: !s.hl && !s.pen,
     last: true,
   });
   return outlineToPath(outline);
@@ -53,11 +71,13 @@ export function drawingPreviewSvg(d: Drawing): string {
   const y = Math.max(0, minY - pad);
   const w = Math.max(40, Math.min(d.width, maxX + pad) - x);
   const h = Math.max(40, Math.min(d.height, maxY + pad) - y);
-  const paths = d.strokes.map((s) => `<path d="${strokePath(s)}" fill="${inkFill(s.color)}"/>`).join('');
+  const paths = d.strokes
+    .map((s) => `<path d="${strokePath(s)}" fill="${inkFill(s.color)}"${s.hl ? ` fill-opacity="${HIGHLIGHTER_ALPHA}"` : ''}/>`)
+    .join('');
   return `<svg viewBox="${x.toFixed(0)} ${y.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" class="w-full h-auto" role="img" aria-label="رسم">${paths}</svg>`;
 }
 
-export type Tool = 'pen' | 'eraser';
+export type Tool = 'pen' | 'highlighter' | 'eraser';
 
 export class DrawingBoard {
   readonly canvas: HTMLCanvasElement;
@@ -67,10 +87,12 @@ export class DrawingBoard {
   private cur: Stroke | null = null;
   private erasing = false;
   private undoStack: Stroke[][] = [];
+  private redoStack: Stroke[][] = [];
 
   tool: Tool = 'pen';
   color: string = 'ink';
-  size: number = PEN_SIZES[0];
+  /** عرض القلم الأساسي؛ المظلِّل يضربه بـ HIGHLIGHTER_SCALE عند الرسم. */
+  size: number = DEFAULT_PEN_SIZE;
 
   constructor(canvas: HTMLCanvasElement, drawing: Drawing, onChange: () => void) {
     this.canvas = canvas;
@@ -97,6 +119,10 @@ export class DrawingBoard {
     return this.undoStack.length > 0;
   }
 
+  get canRedo(): boolean {
+    return this.redoStack.length > 0;
+  }
+
   private toLocal(e: PointerEvent): Pt {
     const r = this.canvas.getBoundingClientRect();
     const x = ((e.clientX - r.left) * this.drawing.width) / r.width;
@@ -107,6 +133,7 @@ export class DrawingBoard {
   private pushUndo() {
     this.undoStack.push([...this.drawing.strokes]);
     if (this.undoStack.length > 60) this.undoStack.shift();
+    this.redoStack = []; // أي تعديل جديد يلغي مسار الإعادة
   }
 
   private down = (e: PointerEvent) => {
@@ -119,7 +146,14 @@ export class DrawingBoard {
       this.erasing = true;
       this.eraseAt(p);
     } else {
-      this.cur = { points: [p], color: this.color, size: this.size, pen: e.pointerType === 'pen' };
+      const hl = this.tool === 'highlighter';
+      this.cur = {
+        points: [p],
+        color: this.color,
+        size: hl ? this.size * HIGHLIGHTER_SCALE : this.size,
+        pen: !hl && e.pointerType === 'pen',
+        ...(hl ? { hl: true } : {}),
+      };
       this.redraw();
     }
   };
@@ -168,7 +202,17 @@ export class DrawingBoard {
   undo() {
     const prev = this.undoStack.pop();
     if (!prev) return;
+    this.redoStack.push([...this.drawing.strokes]);
     this.drawing.strokes = prev;
+    this.redraw();
+    this.onChange();
+  }
+
+  redo() {
+    const next = this.redoStack.pop();
+    if (!next) return;
+    this.undoStack.push([...this.drawing.strokes]);
+    this.drawing.strokes = next;
     this.redraw();
     this.onChange();
   }
@@ -190,8 +234,10 @@ export class DrawingBoard {
       const d = strokePath(s);
       if (!d) continue;
       ctx.fillStyle = s.color === 'ink' ? ink : s.color;
+      ctx.globalAlpha = s.hl ? HIGHLIGHTER_ALPHA : 1;
       ctx.fill(new Path2D(d));
     }
+    ctx.globalAlpha = 1;
   }
 
   destroy() {

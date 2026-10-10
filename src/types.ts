@@ -47,6 +47,8 @@ export interface Stroke {
   size: number;
   /** true إذا كان الضغط حقيقياً (قلم)، وإلا يُحاكى الضغط. */
   pen: boolean;
+  /** مظلِّل: شبه شفاف وبعرض ثابت. حقل اختياري فالملفات القديمة تُفتح كما هي. */
+  hl?: boolean;
 }
 
 export interface Drawing {
