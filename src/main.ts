@@ -40,8 +40,6 @@ let layout: Layout = 'grid';
 let sub: Subscription | undefined;
 let cache = new Map<string, Note>();
 let firstRender = false;
-/** فوق هذا العدد نفعّل content-visibility لتسريع التخطيط. */
-const BIG_LIST = 300;
 
 const VIEW_ICON = { notes: 'notes', archive: 'archive', trash: 'trash' } as const;
 const VIEW_LABEL: Record<View, string> = { notes: 'الملاحظات', archive: 'الأرشيف', trash: 'المهملات' };
@@ -167,7 +165,6 @@ function render(notes: Note[]) {
   $('#pinnedSection').classList.toggle('hidden', !pinned.length);
   $('#pinnedGrid').innerHTML = pinned.map(card).join('');
   $('#othersTitle').classList.toggle('hidden', !(pinned.length && others.length));
-  $('#grid').classList.toggle('big-list', others.length > BIG_LIST);
   $('#grid').innerHTML = others.map(card).join('');
 
   const empty = !notes.length;
