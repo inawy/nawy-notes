@@ -36,6 +36,7 @@ index.html            الهيكل الثابت (القائمة، القارئ،
 brand.json            مصدر ألوان العلامة الوحيد (يُحقن بإضافة Vite)
 src/main.ts           الشاشة الرئيسية: العرض، الاشتراك الحي، الترتيب، ربط الأحداث
 src/db.ts             Dexie: الجداول، الاستعلامات، الحالة، الشواهد، النسخ الاحتياطي
+src/snapshots.ts      لقطات احتياطية تلقائية في قاعدة منفصلة nawy-note-snapshots (سياسة نقية: lib/snapshot-policy.ts)
 src/data/envelope.ts  منطق نقي: مغلف التصدير + normalizeNote (ترحيل الصيغ القديمة)
 src/types.ts          الأنواع المشتركة
 src/reader.ts         ورقة القراءة السفلية

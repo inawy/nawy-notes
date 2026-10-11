@@ -515,3 +515,42 @@ test('الرسم: مظلِّل ولون مخصص وتراجع/إعادة وتب�
   await expect(page.locator('.note-card svg path')).toHaveCount(3);
   expect(await page.evaluate(() => localStorage.getItem('nawy-note:pen'))).toContain('#10b981');
 });
+
+test('اللقطات التلقائية: تُؤخذ تلقائياً ويُسترجع منها ما حُذف نهائياً', async ({ page }) => {
+  await open(page);
+  await newNote(page, 'text');
+  await page.fill('#eTitle', 'سأُحذف ثم أعود');
+  await page.fill('#eText', 'محتوى مهم');
+  await expect(page.locator('#eSaved')).toContainText('محفوظة');
+  await page.click('#eDone');
+
+  // لقطة تلقائية بعد الإقلاع (تُجدول عند الخمول)؛ نعيد التحميل لنضمن مرورها بعد وجود ملاحظة
+  await page.reload();
+  await page.waitForSelector('.note-card');
+  await page.click('#btnMenu');
+  await page.click('#btnSnapshots');
+  await expect(page.locator('#snapshots [data-id]')).toHaveCount(1, { timeout: 15_000 });
+  await expect(page.locator('#snapshots')).toContainText('تلقائية');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#snapshots')).toHaveCount(0);
+
+  // حذف نهائي: مهملات ثم إفراغ (يأخذ لقطة أمان قبلها)
+  page.on('dialog', (d) => void d.accept());
+  await page.locator('.note-card').first().click();
+  await page.click('#rTrash');
+  await page.click('#btnMenu');
+  await page.click('#tabs [data-view="trash"]');
+  await expect(page.locator('.note-card')).toHaveCount(1);
+  await page.click('#btnEmptyTrash');
+  await expect(page.locator('.note-card')).toHaveCount(0);
+
+  await page.click('#btnMenu');
+  await page.click('#btnSnapshots');
+  await expect(page.locator('#snapshots [data-id]')).toHaveCount(2, { timeout: 10_000 });
+  await page.locator('#snapshots [data-act="restore-deleted"]').last().click();
+  await page.keyboard.press('Escape');
+
+  await page.click('#btnMenu');
+  await page.click('#tabs [data-view="notes"]');
+  await expect(page.locator('.note-card')).toContainText('سأُحذف ثم أعود');
+});

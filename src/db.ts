@@ -221,24 +221,31 @@ export async function listNotes(
 
 // ---------- النسخ الاحتياطي ----------
 
-export async function exportBackup(): Promise<Blob> {
+/** lite: بلا صور ولا صوت (الرسوم متجهة وصغيرة فتبقى) — للقطات التلقائية عند ضيق المساحة. */
+export async function exportBackup(opts: { lite?: boolean } = {}): Promise<Blob> {
   const all = (await db.notes.toArray()).map(normalizeNote);
   const notes = await Promise.all(
     all.map(async (n): Promise<SerializedNote> => ({
       ...n,
       attachments: await Promise.all(
-        n.attachments.map(async (a): Promise<SerializedAttachment> => ({
-          ...a,
-          blob: a.blob ? await blobToDataUrl(a.blob) : null,
-        })),
+        n.attachments
+          .filter((a) => !opts.lite || a.kind === 'draw')
+          .map(async (a): Promise<SerializedAttachment> => ({
+            ...a,
+            blob: a.blob ? await blobToDataUrl(a.blob) : null,
+          })),
       ),
     })),
   );
   return new Blob([JSON.stringify(buildEnvelope(notes))], { type: 'application/json' });
 }
 
-/** دمج: يُبقي الأحدث عند تطابق المعرّف. يرمي ImportError برسالة مفهومة. يعيد عدد الملاحظات المضافة/المحدَّثة. */
-export async function importBackup(text: string): Promise<number> {
+/**
+ * دمج: يُبقي الأحدث عند تطابق المعرّف. يرمي ImportError برسالة مفهومة. يعيد عدد الملاحظات المضافة/المحدَّثة.
+ * restore (للقطات): 'deleted' يُرجع المحذوفة نهائياً/المفقودة فقط؛ 'all' يُرجع كل ما في اللقطة ولو استبدل تعديلات أحدث.
+ * الملاحظات المستعادة تأخذ updatedAt الآن فتتفوّق على شواهد الحذف وعلى أي مزامنة لاحقة.
+ */
+export async function importBackup(text: string, opts: { restore?: 'deleted' | 'all' } = {}): Promise<number> {
   const { notes: rawNotes } = parseEnvelope(text);
 
   // تحويل data: URL إلى Blob قبل فتح المعاملة (fetch غير آمن داخل معاملات IndexedDB)
@@ -261,7 +268,14 @@ export async function importBackup(text: string): Promise<number> {
   await db.transaction('rw', db.notes, async () => {
     for (const n of prepared) {
       const existing = await db.notes.get(n.id);
-      if (!existing || existing.updatedAt < n.updatedAt) {
+      const resurrect =
+        opts.restore !== undefined &&
+        n.status !== 'deleted' &&
+        (!existing || existing.status === 'deleted' || opts.restore === 'all');
+      if (resurrect) {
+        await db.notes.put({ ...n, updatedAt: Date.now() });
+        changed++;
+      } else if (!existing || existing.updatedAt < n.updatedAt) {
         await db.notes.put(n);
         changed++;
       }
