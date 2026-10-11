@@ -1,6 +1,7 @@
 import { db, exportBackup, importBackup } from '../db';
 import { $ } from '../lib/util';
 import { toast } from '../lib/toast';
+import { safetySnapshot } from '../snapshots';
 
 const BK_LAST = 'nawy-note:last-backup';
 const BK_ASKED = 'nawy-note:backup-asked';
@@ -55,7 +56,9 @@ export function mountBackup(): void {
     file.value = '';
     if (!f) return;
     try {
-      const n = await importBackup(await f.text());
+      const text = await f.text();
+      await safetySnapshot('before-import');
+      const n = await importBackup(text);
       toast(`تم استيراد ${n} ملاحظة`);
     } catch (err) {
       toast(err instanceof Error ? err.message : 'فشل الاستيراد');

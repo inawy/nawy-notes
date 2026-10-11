@@ -21,6 +21,8 @@ import { appReady, dbMessage, reportError } from './lib/report';
 import { closeEditor, flushEditor, isEditorOpen, openEditor, setOnSaved } from './editor';
 import { cardHTML } from './views/card';
 import { mountBackup } from './features/backup';
+import { isSnapshotsOpen, mountSnapshots } from './features/snapshots';
+import { safetySnapshot } from './snapshots';
 import { mountDrawer } from './features/drawer';
 import { handleLaunchIntent } from './features/launch';
 import { mountPwa } from './features/pwa';
@@ -473,7 +475,7 @@ function wire() {
     setView,
     closeEditor: () => void closeEditor(),
     isEditorOpen,
-    isDialogOpen: () => isReaderOpen() || !!document.getElementById('micHelp'),
+    isDialogOpen: () => isReaderOpen() || isSnapshotsOpen() || !!document.getElementById('micHelp'),
   });
   mountTheme();
   preventNativeMenu();
@@ -520,6 +522,7 @@ function wire() {
 
   $('#btnEmptyTrash').onclick = async () => {
     if (confirm('إفراغ المهملات نهائياً؟')) {
+      await safetySnapshot('before-empty-trash');
       await emptyTrash();
       toast('أُفرغت المهملات');
       void refreshNow();
@@ -577,6 +580,7 @@ guardFirstRender();
 void purgeOldTrash();
 mountPwa();
 mountBackup();
+mountSnapshots();
 
 handleLaunchIntent();
 
