@@ -1,7 +1,9 @@
-import { db, exportBackup, importBackup } from '../db';
+import { db, exportBackup, importBackup, previewImport } from '../db';
+import { showImportPreview } from './import-preview';
 import { $ } from '../lib/util';
 import { toast } from '../lib/toast';
 import { safetySnapshot } from '../snapshots';
+import { planHasChanges } from '../data/import-plan';
 
 const BK_LAST = 'nawy-note:last-backup';
 const BK_ASKED = 'nawy-note:backup-asked';
@@ -57,6 +59,9 @@ export function mountBackup(): void {
     if (!f) return;
     try {
       const text = await f.text();
+      const plan = await previewImport(text); // يرمي ImportError برسالة مفهومة إن كان الملف غير صالح
+      if (!planHasChanges(plan)) return toast(`لا جديد في هذا الملف (${plan.total} ملاحظة، كلها موجودة عندك بنفس الحالة أو أحدث)`);
+      if (!(await showImportPreview(plan, f.name))) return;
       await safetySnapshot('before-import');
       const n = await importBackup(text);
       toast(`تم استيراد ${n} ملاحظة`);
