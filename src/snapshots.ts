@@ -3,6 +3,7 @@ import { db, exportBackup, importBackup } from './db';
 import {
   chooseMode,
   pickPrune,
+  snapshotBudget,
   shouldAutoSnapshot,
   type SnapshotReason,
 } from './lib/snapshot-policy';
@@ -91,7 +92,7 @@ export async function takeSnapshot(reason: SnapshotReason): Promise<SnapshotInfo
     blob,
   };
   await sdb.snaps.put(snap);
-  const prune = pickPrune(await listSnapshots());
+  const prune = pickPrune(await listSnapshots(), undefined, snapshotBudget(quota));
   if (prune.length) await sdb.snaps.bulkDelete(prune);
   return toInfo(snap);
 }

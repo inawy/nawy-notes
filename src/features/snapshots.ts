@@ -94,7 +94,7 @@ export function showSnapshots(): void {
         <h2 id="snTitle" class="flex-1 text-lg font-semibold">اللقطات التلقائية</h2>
         <button type="button" id="snClose" class="btn-icon !rounded-full" aria-label="إغلاق">${raw(icon('x', 'w-5 h-5'))}</button>
       </div>
-      <p class="mb-2 text-xs text-slate-500 dark:text-slate-400">نسخ احتياطية محلية على هذا الجهاز تؤخذ تلقائياً مرة يومياً عند تغيّر ملاحظاتك، وقبل الاستيراد وإفراغ المهملات. تُحفظ آخر 5 فقط. للحماية من فقدان الجهاز نفسه نزّل نسخة خارجية من «نسخ احتياطي».</p>
+      <p class="mb-2 text-xs text-slate-500 dark:text-slate-400">نسخ احتياطية محلية على هذا الجهاز تؤخذ تلقائياً مرة يومياً عند تغيّر ملاحظاتك، وقبل الاستيراد وإفراغ المهملات. تُحفظ آخر 5 لقطات (أو أقل إن كبر حجمها، فيُحذف الأقدم أولاً). للحماية من فقدان الجهاز نفسه نزّل نسخة خارجية من «نسخ احتياطي».</p>
       <div id="snList" class="min-h-0 flex-1 overflow-y-auto"></div>
     </div>`);
   document.body.appendChild(wrap);

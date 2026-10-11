@@ -2,7 +2,12 @@
 export const SNAPSHOT_KEEP = 5;
 export const AUTO_INTERVAL_MS = 24 * 60 * 60 * 1000;
 /** فوق هذا الحجم من المرفقات نأخذ لقطة «خفيفة» بلا صور/صوت لحماية المساحة والذاكرة. */
-export const FULL_MAX_BLOB_BYTES = 30 * 1024 * 1024;
+export const FULL_MAX_BLOB_BYTES = 10 * 1024 * 1024;
+/** سقف مجموع حجم اللقطات: 10% من سعة التخزين، بين 20 و150 م.ب (100 م.ب إن لم تُعرف السعة). */
+export function snapshotBudget(quota?: number): number {
+  const MB = 1024 * 1024;
+  return quota ? Math.min(150 * MB, Math.max(20 * MB, quota * 0.1)) : 100 * MB;
+}
 
 export type SnapshotReason = 'auto' | 'before-import' | 'before-empty-trash' | 'manual';
 
@@ -26,12 +31,26 @@ export function shouldAutoSnapshot(c: AutoCheck): boolean {
   return c.now - c.lastCreatedAt >= AUTO_INTERVAL_MS;
 }
 
-/** معرّفات اللقطات الأقدم من آخر `keep` لقطة (لحذفها). */
-export function pickPrune(list: { id: string; createdAt: number }[], keep = SNAPSHOT_KEEP): string[] {
-  return [...list]
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(keep)
-    .map((x) => x.id);
+/**
+ * معرّفات اللقطات التي تُحذف: الأقدم من آخر `keep` لقطة، ثم الأقدم فالأقدم حتى يدخل المجموع في `budget`
+ * (دائماً تبقى الأحدث ولو تجاوزت وحدها السقف).
+ */
+export function pickPrune(
+  list: { id: string; createdAt: number; size?: number }[],
+  keep = SNAPSHOT_KEEP,
+  budget = Infinity,
+): string[] {
+  const sorted = [...list].sort((a, b) => b.createdAt - a.createdAt);
+  const kept = sorted.slice(0, keep);
+  const drop = sorted.slice(keep).map((x) => x.id);
+  let total = kept.reduce((n, x) => n + (x.size ?? 0), 0);
+  while (kept.length > 1 && total > budget) {
+    const old = kept.pop();
+    if (!old) break;
+    total -= old.size ?? 0;
+    drop.push(old.id);
+  }
+  return drop;
 }
 
 /** كاملة (بمرفقاتها) أم خفيفة؟ الخفيفة إن كبرت المرفقات أو اقتربنا من سعة التخزين. */
