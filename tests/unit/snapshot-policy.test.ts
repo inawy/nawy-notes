@@ -41,7 +41,7 @@ describe('pickPrune', () => {
 describe('chooseMode', () => {
   it('كاملة عند الصغر', () => expect(chooseMode(1000, 1e6, 1e9)).toBe('full'));
   it('خفيفة عند ضخامة المرفقات', () => expect(chooseMode(FULL_MAX_BLOB_BYTES + 1)).toBe('lite'));
-  it('خفيفة عند اقتراب السعة', () => expect(chooseMode(20e6, 700e6, 1000e6)).toBe('lite'));
+  it('خفيفة عند اقتراب السعة', () => expect(chooseMode(20e6, 780e6, 1000e6)).toBe('lite'));
   it('كاملة إن لم تتوفر تقديرات السعة', () => expect(chooseMode(5e6)).toBe('full'));
 });
 
