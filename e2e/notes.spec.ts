@@ -554,3 +554,52 @@ test('اللقطات التلقائية: تُؤخذ تلقائياً ويُست�
   await page.click('#tabs [data-view="notes"]');
   await expect(page.locator('.note-card')).toContainText('سأُحذف ثم أعود');
 });
+
+test('معاينة الاستيراد: تعرض ما سيتغيّر، والإلغاء لا يغيّر شيئاً، والتأكيد يستورد', async ({ page }) => {
+  await open(page);
+  const now = Date.now();
+  const note = (id: string, title: string, extra: Record<string, unknown> = {}) => ({
+    id,
+    type: 'text',
+    title,
+    body: 'نص',
+    items: [],
+    attachments: [],
+    color: 'default',
+    pinned: false,
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+    trashedAt: null,
+    ...extra,
+  });
+  const file = {
+    name: 'backup.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(
+      JSON.stringify({
+        app: 'nawy',
+        product: 'note',
+        schemaVersion: 2,
+        exportedAt: new Date().toISOString(),
+        data: { notes: [note('imp-1', 'مستوردة'), note('imp-gone', '', { status: 'deleted', deletedAt: now })] },
+      }),
+    ),
+  };
+
+  await page.setInputFiles('#importFile', file);
+  await expect(page.locator('#importPreview')).toContainText('ملاحظة جديدة ستُضاف');
+  await expect(page.locator('#importPreview')).toContainText('مستوردة');
+  await page.click('#ipCancel');
+  await expect(page.locator('#importPreview')).toHaveCount(0);
+  await expect(page.locator('.note-card')).toHaveCount(0);
+
+  await page.setInputFiles('#importFile', file);
+  await page.click('#ipOk');
+  await expect(page.locator('.note-card')).toContainText('مستوردة');
+
+  // إعادة استيراد نفس الملف: لا جديد، فلا نافذة
+  await page.setInputFiles('#importFile', file);
+  await expect(page.locator('#toast')).toContainText('لا جديد في هذا الملف');
+  await expect(page.locator('#importPreview')).toHaveCount(0);
+});

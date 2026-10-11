@@ -10,6 +10,7 @@ import type {
   View,
 } from './types';
 import { buildEnvelope, normalizeNote, parseEnvelope } from './data/envelope';
+import { planImport, type ImportPlan } from './data/import-plan';
 
 export { normalizeNote, ImportError } from './data/envelope';
 import { DAY, blobToDataUrl, dataUrlToBlob, normalize, uid } from './lib/util';
@@ -238,6 +239,24 @@ export async function exportBackup(opts: { lite?: boolean } = {}): Promise<Blob>
     })),
   );
   return new Blob([JSON.stringify(buildEnvelope(notes))], { type: 'application/json' });
+}
+
+/** معاينة الاستيراد دون كتابة شيء: يرمي ImportError إن كان الملف غير صالح. */
+export async function previewImport(text: string): Promise<ImportPlan> {
+  const { notes } = parseEnvelope(text);
+  const incoming = notes.map((n) => ({
+    id: String(n.id),
+    updatedAt: Number(n.updatedAt),
+    status: typeof n.status === 'string' ? n.status : undefined,
+    title: typeof n.title === 'string' ? n.title : undefined,
+  }));
+  const found = await db.notes.bulkGet(incoming.map((n) => n.id));
+  const existing = new Map<string, { updatedAt: number; status: string }>();
+  found.forEach((n, i) => {
+    const id = incoming[i]?.id;
+    if (n && id !== undefined) existing.set(id, { updatedAt: n.updatedAt, status: n.status });
+  });
+  return planImport(incoming, existing);
 }
 
 /**
